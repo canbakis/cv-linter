@@ -2,11 +2,13 @@
 
 **Date:** 6 September 2026
 **Status:** Proposed interaction specification; no UI implementation, usability results or model-quality claims.
-**Related:** [Product plan and claims policy](architecture-and-product-plan.md) · [Commands, evidence, consent and schemas](agent-skill-architecture.md)
+**Related:** [Product plan and claims policy](architecture-and-product-plan.md) · [Commands, evidence, confirmation and schemas](agent-skill-architecture.md)
 
 ## 1. Product experience and claims policy
 
-The primary workflow is a distributable Agent Skill; the PWA offers drag-and-drop access and visual inspection of the same analysis. Users should understand what was checked, where data was processed, what evidence supports a finding, and which action is available next. Avoid score celebrations, rejection predictions and pressure to buy fixes.
+The primary workflow is an Agent Skill invoking the bundled local executable; the PWA offers drag-and-drop access and visual inspection of the same analysis. **Choose CV → local findings → optional judge review and confirmation → separate advice.** MCP is optional and deferred beyond MVP; users do not configure a server to check a CV. Lead with useful findings and evidence, without score celebrations, rejection predictions or pressure to buy fixes.
+
+Deterministic linting is local by default and needs no privacy setup. If the user selects an LLM judge, show a concise disclosure that selected content goes to the chosen provider/model, label **ZDR / non-ZDR / unknown**, show the exact payload and require confirmation. Encryption, retention management, cryptographic receipts, host projection and detailed threat modeling stay out of the normal UX; proportionate implementation safeguards remain in the [architecture](architecture-and-product-plan.md#8-data-handling-and-practical-safeguards).
 
 Use the product plan's [claims policy](architecture-and-product-plan.md#1-product-decision-and-claims-policy) in every surface, report and export:
 
@@ -15,7 +17,7 @@ Use the product plan's [claims policy](architecture-and-product-plan.md#1-produc
 | Deterministic observation | Rule name/ID, observed property, source evidence, severity, certainty and check scope |
 | Vendor fact | Named vendor, exact documented workflow/edition, primary source and source-review status |
 | Design inference | Label “Possible consequence” or “Documentation-based guidance”; distinguish observed layout from untested downstream effect |
-| Advisory model judgment | Persistent “LLM advisory” label, criterion, evidence, model/location, uncertainty and audit link |
+| Advisory model judgment | Persistent “LLM advisory” label, criterion, evidence, model/location, uncertainty and Run details link |
 | Unvalidated assumption | Mark the feature/profile/model “Experimental” or the quantity “Proposed target”; never present it as measured |
 | Unknown/unassessed | Explain missing input, capability or context; do not render a pass indicator |
 
@@ -30,7 +32,7 @@ Both agent and PWA views render the same versioned reports. Keep these result gr
 1. **Document checks:** native text, structure, field associations, scoped vendor risks and unresolved checks.
 2. **Job evidence:** literal/curated-vocabulary matches and assessed requirement scope from deterministic comparison.
 3. **Advisory review:** explicit judge interpretations, wording suggestions, semantic mappings and abstentions.
-4. **Run details:** source revision, parser/rule/profile versions, permissions/disclosures, model execution and audit record.
+4. **Run details:** source revision, parser/rule/profile versions, model/provider, reviewed ZDR metadata, confirmation and outcome; secondary details rather than a required workflow.
 
 Use these labels consistently:
 
@@ -59,29 +61,23 @@ The skill description advertises local lint, evidence reports and explicit advis
 | “Check my CV at this path” | Resolve only that selected input and call `lint`; preserve all findings and unknowns |
 | “Check my CV,” with no selected input | Ask for one file/path or explicit content; do not search Downloads, the repository or the home directory |
 | “Compare this CV to this job description” | Call deterministic `compare-to-job`; show exact versus curated-synonym evidence and reviewable requirements |
-| “Review how clearly this experience supports the job” | Prepare `judge` for specified criteria; show model/payload disclosure and use valid consent before running |
+| “Review how clearly this experience supports the job” | Prepare `judge` for specified criteria; show provider/model, ZDR status and exact payload; require confirmation before running |
 | “Show the report” | Render existing results using `report`; no new inference or reparsing |
 | “Check the revised file” | Explicit new lint run and compatible deterministic revision diff; previous advisory output is marked as belonging to the old revision |
 
-Never substitute the conversational host's opinion for executable output. The host can explain a disclosed result without becoming the CV Linter judge; new substantive model assessments must use the explicit audited judge path. Requests for wholesale rewriting or applicant ranking are outside this workflow; offer evidence-grounded review within scope without editing the source automatically.
+Never substitute the conversational host's opinion for executable output. The host can explain a disclosed result without becoming the CV Linter judge; new substantive model assessments must use the explicit judge review and confirmation path. Requests for wholesale rewriting or applicant ranking are outside this workflow; offer evidence-grounded review within scope without editing the source automatically.
 
-### Host disclosure before content reaches chat
+### Brief host context note
 
-Before reading/returning private evidence, establish where the executable and host conversational model run and what the host receives. Show separate states such as **Analysis: this device** and **Conversation: remote provider / unknown**. A cloud-hosted executable is remote processing even when its command is named local. Do not claim the whole workflow is local based on stdio or a loopback endpoint.
+Explain once in adapter setup/help: **“CV checks run in the local executable. Findings shared in this chat are handled under your agent host's data policies.”** Do not claim the whole conversation is local. If the executable actually runs in a remote agent runtime, label that location and offer standalone CLI/PWA for on-device analysis. A CV pasted into chat is already part of that host's context.
 
-Default cloud/unknown-host tool results contain an opaque local report handle and generic operational status. They contain no CV text, hashes, filenames, findings counts or document-derived summaries. Private evidence remains in the local viewer. A trusted local review surface lets the user approve an exact projection into the host context; that consent is separate from remote judging. A shortened summary still requires disclosure because it derives from the CV.
-
-Illustrative response before private output disclosure:
-
-> The local operation finished. Open the local report to inspect the findings. Sharing findings in this conversation requires selecting what this host may receive.
-
-The adapter must not then read the report with a general file tool to evade the projection gate. If the host cannot support this boundary, offer the standalone executable/PWA. If the user pasted the CV into cloud chat already, explain that it has already entered that host's context; do not describe a subsequent local lint as undoing that transmission. Host transcript retention/deletion is separate from CV Linter storage.
+Return useful, compact findings with necessary evidence; a separate per-result host projection preview or receipt is not part of MVP. Avoid dumping the full CV, exact judge payload or raw model replies into chat by default. Offer Open local report for full inspection, and respect stricter user/host settings. The optional judge provider is a separate recipient and always needs its own payload review and confirmation. If a host cannot run the executable or support judge confirmation, offer the standalone flow; MCP setup is a later integration option.
 
 ### Compact evidence-based response
 
-After the user authorizes a detailed projection, provide a short report with processing location, scope/version, most consequential findings, explicit unknowns, and local evidence links. Do not dump an entire CV or raw audit log into the conversation. Paginate through approved evidence only; label truncated views and give access to the complete local report.
+After lint completes, provide a short report with the most consequential findings, explicit unknowns and local evidence links. Use a small processing-location label; keep full version details in the report. Label truncated views and offer the complete local report. No extra privacy confirmation is required to see normal lint findings.
 
-Illustrative disclosed finding:
+Illustrative finding:
 
 > **Needs verification — contact information in a DOCX header.** The parser located the selected contact span in the header part. Greenhouse documents this as a parsing risk; the effect in your employer's configuration is untested. Inspect the highlighted paragraph, and consider placing the same visible information in the document body before rechecking.
 
@@ -91,29 +87,29 @@ Useful next actions are Open evidence, Compare to job, Request advisory review, 
 
 ### Agent judge interaction
 
-1. Resolve the requested task/criteria and verified evidence snapshot. Preparation is local and does not call a model.
-2. Show the trusted local proposal: model/location, selected content, omitted/redacted content, scope, attempts/budget and retention. If no model is installed, show **Judge supported · Model setup required** with a separate setup action.
-3. Use an existing valid receipt for this exact operation or obtain the user's decision on the reviewed proposal. Never accept a model-written approval flag or infer remote consent from provider credentials.
-4. Execute through the dedicated tool/command. Announce progress and offer cancellation without streaming unvalidated model text as findings.
-5. Present validated advice separately from lint, with per-criterion evidence and an audit link. Display abstention, invalid output, error and cancellation as actual outcomes.
+1. Resolve the requested task/criteria and evidence snapshot locally. Choosing an LLM judge starts review; it does not call the model.
+2. Show provider/model, execution location, **ZDR / non-ZDR / unknown**, selected content and the exact payload in a trusted review surface. If no model is configured, offer model/provider setup, then return to review.
+3. Require **Send and judge**, or **Run local judge** for on-device inference. A tested host user-input channel can capture this decision; an agent-written approval flag or automated click cannot. Use interactive CLI review if the host cannot provide it.
+4. Run the prepared request, with progress and cancellation. Show advice only after output and evidence validation.
+5. Present criterion-level advice separately from lint, with evidence and Run details. Abstention, invalid output, error and cancellation remain explicit outcomes.
 
-Avoid repeated approval for an unchanged, already authorized proposal. A changed CV/JD, scope, redaction, model/destination, prompt/rubric or attempt budget requires a new proposal. Headless agent workflows need exact preauthorized proposals, not a general “yes to everything.” No provider fallback after timeout or refusal.
+Use one review/confirmation step, without receipt handling or a separate privacy opt-in wizard. Do not ask again for an unchanged, already confirmed operation. A changed CV/JD, scope, payload, provider/model/route, policy disclosure or limits returns to review. Headless execution without a confirmed active proposal returns `confirmation_required`; there is no blanket future approval or automatic provider fallback.
 
 ## 4. PWA UX and layout
 
 ### Entry and local state
 
-The PWA offers **Choose CV**, drag-and-drop, Paste text and **Import report**. Explain supported formats and declared limits before processing. Treat file selection as permission to lint that input locally, not to save it, download a model or send it remotely. Default label for browser-only local analysis: **On this device · Not saved by CV Linter**. Report imports show original execution location and imported provenance rather than inheriting this label for past runs.
+The PWA offers **Choose CV**, drag-and-drop, Paste text and **Import report**. Explain supported formats and declared limits before processing. Treat file selection as permission to lint that input locally, not to save it, download a model or send it remotely. Default label for browser-only analysis: **Linted locally**. Explain session-only storage in help and near Export/Clear session, not a setup wizard. Report imports show original execution location and imported provenance rather than inheriting this label for past runs.
 
 A PWA can cache application assets for offline operation, while filesystem integration varies by browser. File handlers are not a universal assumption. [Installability](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable), [offline behavior](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation), [File System API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_API), [file association](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Associate_files_with_your_PWA). Installation/update or model download may contact a host; local document analysis must not transmit document-derived data.
 
-Use browser-compatible shared core modules and schemas. Initial agent-to-PWA handoff is an explicit local report export/import, without content in a URL or hidden localhost connection. Browsers cannot directly speak stdio. Any later paired native bridge has a separate connection/forwarding disclosure. Until a supported browser judge adapter or paired runtime exists, let the PWA inspect native judge reports and show local setup/handoff guidance; do not replace it with unannounced remote inference.
+Use browser-compatible shared core modules and schemas. Initial agent-to-PWA handoff is explicit local report export/import, with no content in URLs or hidden localhost connection. The PWA does not need MCP and cannot directly speak native stdio. Until a supported browser judge adapter exists, Request advisory review provides handoff to the executable, and the PWA imports its advice. A paired native bridge is deferred; do not introduce a hidden proxy or remote fallback to make judging appear available in the browser.
 
 ### Desktop report layout
 
 ```text
-Document revision     Analysis location     Saved state     Clear session
-Scope: input type · language · selected profile · source status
+Document revision     Linted locally     Export     Clear session
+Scope: input type · language · selected profile
 Summary: consequential findings · unresolved checks · assessed scope
 
 ┌─────────────────────────────┬────────────────────────────────────┐
@@ -148,77 +144,81 @@ Examples of correct profile copy: Greenhouse upload and parse budgets differ; Sm
 
 Job comparison accepts an explicitly supplied local file or pasted JD, with no automatic URL retrieval. Display the requirement inventory for required/preferred/alternative/negated wording review. Show a matrix of requirement excerpt, CV evidence, deterministic match method, assessment scope and uncertainty. “Not evidenced” means only that this assessed CV lacks located support. Semantic interpretation is a distinct Request advisory review action over selected criteria, with exact requirement spans included.
 
-## 5. Consent flows
+## 5. Judge disclosure and confirmation
 
-Consent belongs to the reviewed action, not a general feature toggle. The controller owns receipts and validation; UI controls display and request authority without bypassing it.
+The only extra review step in the normal checking workflow appears when the user requests a judge. The controller prepares the request locally; the UI displays it and captures a real user confirmation before execution. Choosing a provider, having credentials or previously judging a different CV is insufficient.
 
-| Action | Required disclosure / user action |
-|---|---|
-| Select file for local lint | Selected input and local scope; selection authorizes analysis only |
-| Download a model | Source/license, size, digest verification, destination/cache and network download metadata; explicit download |
-| Local judge | Selected installed model/artifact/runtime, verified local/non-forwarding status, exact evidence/task, redaction, attempts/limits and local retention; explicit run request/consent |
-| Configure remote provider | Endpoint/model choices, credentials location and known retention/training terms; enable provider only, no CV transmission |
-| Remote judge | Exact payload/fields and destination including relay, model/version, redaction limitations, retention terms/date or unknowns, cost estimate or cap; **Send and judge** |
-| Share result with agent host | Host location/provider/retention if known and exact selected report projection; separate confirmation from judge-provider consent |
-| Save/export/copy | Destination and included identifiers, source excerpts and audit fields; explicit action |
+Illustrative remote review card; bracketed values are populated from the prepared request:
 
-Do not preselect remote mode or combine “download local model” with “upload my CV.” Local remains preferred when installed and validated for the requested task. A network-local/self-hosted server is off-device; a localhost service with unknown forwarding is not labeled verified local. Unknown terms and forwarding status remain visible, not replaced with privacy assurances.
+```text
+Review with [provider] / [model]
+Selected CV content will be sent to [provider] using [model].
+[Also sending selected job-description content, when applicable.]
+[Via gateway name, if any.]
+ZDR status: unknown          Policy details
 
-The review screen contains a readable payload preview, selected criteria, redaction diff and excluded-scope notice, plus technical details on demand. Model/provider and execution location are always visible because they affect the decision. Avoid putting cryptographic hashes in the primary user flow; offer them in Run details. A change to the payload or model returns the flow to review and invalidates prior consent.
+Review: [selected task and sections]     [Cost estimate or request cap]
+Selected content: [readable exact passages, with exclusions marked]
+Exact payload: [scrollable complete request body, expandable full view]
+
+Cancel                       Send and judge
+```
+
+The status field always shows **ZDR**, **non-ZDR** or **unknown** for a provider request; do not hide it under Policy details. The exact-payload view is available before confirmation and includes every submitted CV/JD passage, instruction, rubric, report field, attachment/metadata if any, and generation parameter. Show the complete request representation alongside readable content; do not substitute a summary or silently truncate the available full view. Destination and any relay are named; authentication secrets are never displayed. Any edit rebuilds the actual prepared payload and resets confirmation. Exclude unnecessary contact/identity content when the task permits, but do not claim redaction makes a CV anonymous.
+
+For fully on-device, non-forwarding inference, replace the disclosure with **“Runs on this device using [model]; no provider transmission”** and the button with **Run local judge**. Keep the exact input preview and confirmation. Provider-policy ZDR does not apply to this route; do not label a local runtime ZDR. A loopback service with unknown forwarding is not presented as verified on-device inference.
+
+### What the ZDR label means
+
+ZDR is provider-policy metadata for this account, model, endpoint, feature set and route, **not a guarantee** of deletion, confidentiality or no training. The [architecture's labeling policy](architecture-and-product-plan.md#zdr-is-provider-policy-metadata-not-a-guarantee) requires verified applicable evidence and a verification date for ZDR/non-ZDR; missing, stale or uncertain evidence shows unknown. A provider saying it offers ZDR does not establish that this user's request has it. Policy details show source/contract reference, scope, last verification date and material caveats, without a retention-management workflow.
+
+Non-ZDR and unknown choices remain usable after the same disclosure and confirmation. No prechecked consent, ZDR-only default restriction, green safety certification, or promise that CV Linter can delete provider copies. If a relay receives content, include its policy when determining the displayed status. Use words as well as color.
 
 ```mermaid
 stateDiagram-v2
     [*] --> LintAvailable
-    LintAvailable --> Prepared: Explicit advisory request
-    Prepared --> SetupRequired: No supported installed model
-    SetupRequired --> Prepared: Explicit setup completes
-    Prepared --> Review: Freeze payload and disclose destination
-    Review --> Declined: User declines
-    Review --> Authorized: User approves exact proposal
-    Authorized --> Review: Proposal changes or consent expires
-    Authorized --> Running: Controller verifies and consumes receipt
+    LintAvailable --> Prepared: User requests advisory review
+    Prepared --> SetupRequired: No supported configured model
+    SetupRequired --> Prepared: User completes setup
+    Prepared --> Review: Provider/model, status and exact payload
+    Review --> Declined: Cancel
+    Review --> Confirmed: Send and judge / Run local judge
+    Confirmed --> Review: Request or disclosure changes
+    Confirmed --> Running: Controller verifies the confirmed request
     Running --> Validated: JSON and evidence accepted
-    Running --> Abstained: Insufficient safe context
+    Running --> Abstained: Insufficient reliable context
     Running --> Invalid: Output validation fails
     Running --> Failed: Runtime or provider error
     Running --> Cancelled: User cancels
 ```
 
-Deterministic lint results remain available in every judge state. Completed responses may contain mixed advisory labels, including criterion-level abstention. Do not convert Invalid/Failed/Cancelled into “no issues found.” A retry is explicit and limited by the approved attempt budget; changing context or requesting a different provider requires new consent. Cancellation prevents further work but cannot retrieve content already sent. Do not claim deletion from a remote provider unless a verified provider mechanism actually confirms it.
+Lint results remain available in every state. Invalid, Failed and Cancelled never mean “no issues found.” MVP makes one attempt by default; offer an explicit Retry after showing the outcome and whether data may already have been sent. A changed request requires a fresh preview/confirmation. Cancellation prevents further work but cannot recall a submitted request. Do not silently retry, repair with another model call, or switch providers.
 
-For one exact local run already requested after disclosure, avoid a redundant confirmation. For a remote run, both provider opt-in and payload approval must be established. Saved provider selection, prior-session consent or generic host tool approval is insufficient. Noninteractive use surfaces `consent_required` with a local review handle rather than waiting indefinitely or approving automatically.
+Model download is a separate setup action showing source, size, license and progress/cancel. No model downloads occur during lint. Export and Clear session remain ordinary explicit controls; neither requires a privacy wizard. Noninteractive judge calls without a trusted confirmation return `confirmation_required` and instructions to open review; no signed receipts or headless batch approval flow is exposed in MVP.
 
-## 6. Advisory result and auditability
+## 6. Advisory results and Run details
 
-Each advisory criterion shows its label, exact CV/JD evidence, concise rationale, missing evidence and any source-preserving suggestion. Display **Advisory · Does not change document checks** with model/location. Do not merge model confidence and deterministic check certainty. Suggestions offer Copy suggestion or Mark reviewed; they do not edit the CV, add unsupported achievements or auto-apply changes.
+Each criterion shows its label, exact CV/JD evidence, concise rationale, missing evidence and any source-preserving suggestion. Display **Advisory · Does not change document checks** with the model/provider. Copy suggestion and Mark reviewed do not edit the CV or add unsupported achievements. Model confidence and deterministic observation certainty remain separate.
 
-For disagreement, show both the deterministic observation and the separate advisory interpretation. For example, semantic wording support does not resolve text lost in extraction. If the judge is low-confidence, cannot see necessary context, or flips under a consented repeated review, show abstention/instability rather than an averaged verdict. Pairwise review is limited to two revisions of the user's own CV; there is no applicant leaderboard or hiring recommendation.
+If advice conflicts with lint, show both with their evidence; semantic wording support cannot resolve text lost during extraction. Missing context, low confidence or instability yields abstention. Editorial comparisons are limited to revisions of the user's own CV, with no applicant leaderboard or hiring recommendation.
 
-The Run details/audit drawer is reachable from every advisory result and failure. It shows:
+A secondary **Run details** drawer provides the selected scope and sent payload, model/provider/route, reviewed ZDR status with source/date, request confirmation time, component versions, validation/outcome and actual usage/cost when known. Keep hashes, runtime settings and reproduction limits in technical details. Raw rejected replies and hidden chain-of-thought are not normal report content; show a concise validation error instead.
 
-- **Inputs and scope:** revision identifiers/hashes, selected CV/JD spans, excluded content, redaction policy, provenance, retrieval coverage and any truncation.
-- **Model execution:** provider, endpoint/relay, local/remote/forwarding status, model artifact/snapshot, quantization, runtime, prompt/rubric/schema versions, decoding parameters and criterion/order seed when applicable.
-- **Authorization:** approving action/channel, timestamp, payload binding, expiry, allowed attempts/cost, whether consent was consumed; opaque receipt reference without exposing bearer credentials.
-- **Outcome:** validation status, accepted/abstained criteria, evidence errors, start/finish/cancel/error events and actual token/resource/cost data when available.
-- **Reproduction and retention:** parser/rules/profile/package versions, input/payload/output/event hashes, storage policy, audit completeness, export choices and replay limitations.
-
-Use plain explanations beside technical values: a hash ties this run to exact content but cannot recover deleted content; fixed model settings may still yield different results; self-reported confidence is not measured accuracy. Do not display hidden chain-of-thought. An invalid reply is not accepted advice; raw rejected content is not automatically retained or shown.
-
-Keep an append-only event sequence during the retained run, including refusals, invalid replies and errors. Show incomplete audit recovery visibly; never mark a partially recorded provider request as an auditable success. Hash chaining gives limited tamper evidence relative to a trusted checkpoint, not proof against replacement by the device owner. Offer a minimal audit receipt export by default and an explicit encrypted evidence bundle when the user wants replayable material. Session-only audits disappear when cleared unless exported; the label must not promise permanent history.
+These are ordinary run records for explanation and troubleshooting, not cryptographic receipts or proof of provider deletion. They last for the active session unless the user exports a report. The normal flow needs no audit-chain viewer, encrypted evidence bundle or retention controls.
 
 ## 7. Revisions, persistence and failure states
 
 ### Revision comparison and export
 
-Reimporting a modified file produces a new input hash and analysis. Show resolved, remaining and new findings plus potential content losses under a compatible rubric/profile/capability set. If versions differ, offer an explicit rerun under a selected common version or show separate reports with comparison withheld. Do not apply old advice or consent to a new revision. A fresh advisory comparison is a separate explicit operation.
+Reimporting a modified file produces a new input hash and analysis. Show resolved, remaining and new findings plus potential content losses under a compatible rubric/profile/capability set. If versions differ, offer an explicit rerun under a selected common version or show separate reports with comparison withheld. Do not apply old advice or confirmation to a new revision. A fresh advisory comparison is a separate explicit operation.
 
-Report export preview offers summary, selected evidence, full local evidence bundle and audit receipt choices. Default shared exports omit unnecessary identity/source excerpts and warn about any still-included document-derived findings. Generate inert self-contained HTML or versioned JSON without external resources. Imported reports are untrusted data; label original execution provenance and verification status. Hashes printed inside an import do not authenticate it, and imports never auto-run tools, fetch source files or execute scripts.
+Report export offers Summary or Report with selected evidence, with a preview of included content. Include basic Run details when exporting advice; full source/payload inclusion is an explicit export choice. Default shared exports omit unnecessary identity/source excerpts. Generate inert self-contained HTML or versioned JSON without external resources. Imported reports are untrusted data; label original execution provenance and verification status. Hashes printed inside an import do not authenticate it, and imports never auto-run tools, fetch source files or execute scripts.
 
-### Saving and deletion
+### Session and export
 
-Default PWA mode keeps CV Linter data in session memory. “Not saved by CV Linter” does not promise the OS never writes memory to disk. Optional encrypted local history has a passphrase/lock flow, recovery limitations, retention controls and export. Browser storage can be evicted; offer recovery guidance after quota/migration failure. [Storage lifecycle](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+MVP keeps document-derived state in session memory or private temporary files for the active operation; explicit CLI/PWA exports save only to the chosen destination. Provide **Export** and **Clear session**. Clearing stops in-flight work and removes current analyses, previews and advice, with best-effort temporary-file cleanup. Explain in help that clearing cannot retract exported files, host transcripts or provider copies; avoid claims of secure erasure from the OS.
 
-Clear session, delete saved run/history and remove downloaded models are distinct actions. Stop in-flight work and remove dependent analyses, previews, embeddings, advice and audit material to prevent regeneration after deletion. Explain that exports, host transcripts and provider copies have separate retention and cannot be retracted by clearing this app. Do not request accounts or research donation during basic checking.
+Saved history, encrypted vaults, passphrase recovery, retention schedules and account synchronization are deferred. They should be added only if a demonstrated user need warrants the extra workflow, with appropriate implementation safeguards. Basic checking does not ask for an account or research donation.
 
 ### Required failure presentations
 
@@ -228,17 +228,18 @@ Clear session, delete saved run/history and remove downloaded models are distinc
 | Unsupported/encrypted/malformed file | Explain support/password/resource limitation; local password entry only if supported; retain no password |
 | Permission or integrity failure | Name the denied input/output or invalid package without private-path leakage; no broader directory scan or automatic reinstall |
 | Missing/unsupported model or hardware | Judge supported; setup/task availability required; lint remains complete |
-| Invalid JSON or unverifiable evidence | Advisory output rejected; show concise validator reason and audit outcome; no silent repair |
+| Invalid JSON or unverifiable evidence | Advisory output rejected; show concise validator reason and run outcome; no silent repair |
 | Low confidence, conflicting evidence or suspicious instructions | Abstained; show assessed scope and reason; user can inspect source or prepare narrower criteria |
-| Expired/replayed/changed consent | Review required; no execution; changed payload is visible |
+| Expired/changed confirmation or duplicate run request | Return to review when confirmation is stale; show existing state for duplicates without sending twice |
 | Remote timeout/cancel | Show whether transmission started and what is known; no automatic retry/provider switch |
-| PWA cannot reach native stdio runtime | Offer report import/local executable handoff or a supported browser model; no implicit localhost connection |
-| Storage quota/eviction or incomplete audit | State what was retained; offer explicit export/recovery; do not claim saved/auditable success |
+| Judge runtime unavailable from PWA | Offer executable handoff and report import; no MCP setup, hidden proxy or implicit localhost connection |
+| Export or run-record failure | State what was saved and whether inference may have occurred; preserve available results in session and offer retrying export |
+| Provider-policy evidence missing or stale | Show ZDR status unknown with the reason in Policy details; allow explicit confirmation without a guarantee |
 
 ## 8. Accessibility and UX validation
 
-Target [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/). Provide keyboard-complete source/evidence navigation, semantic headings/tables, visible focus, non-color statuses, contrast, responsive reflow and readable error messages. Announce phase changes and completion without noisy token streaming. Move focus predictably after consent dialogs and preserve the selected finding after cancellation. Source highlights need textual locations; consent payloads and audit details must be readable with assistive technology. Test actual browsers/devices and screen readers, not automated checks alone.
+Target [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/). Provide keyboard-complete source/evidence navigation, semantic headings/tables, visible focus, non-color statuses, contrast, responsive reflow and readable error messages. Announce phase changes and completion without noisy token streaming. Move focus predictably after review dialogs and preserve the selected finding after cancellation. Source highlights need textual locations; payload previews and Run details must be readable with assistive technology. Test actual browsers/devices and screen readers, not automated checks alone.
 
-Proposed usability tasks: install/invoke the skill, select only the intended file, distinguish a vendor fact from a possible consequence, locate and fix an evidence-backed issue, interpret a missing-evidence/abstention result, understand host versus judge disclosure, decline/cancel remote review, inspect the sent payload and audit, compare revisions, and export/delete locally. Measure task completion, corrections made without content loss, understanding, accidental disclosure attempts, time/steps and abandonment. Sample size and target thresholds are planning assumptions to set before the study; no study has run.
+Proposed usability tasks: install/invoke the skill, select only the intended file, distinguish a vendor fact from a possible consequence, locate and fix an evidence-backed issue, interpret a missing-evidence/abstention result, identify the selected provider/model and ZDR status, inspect the exact payload, decline/confirm/cancel judging, compare revisions, and export/clear the session. Check that the brief host-context note is understood without blocking the basic workflow. Measure task completion, corrections made without content loss, understanding, accidental disclosure attempts, time/steps and abandonment. Sample size and target thresholds are planning assumptions to set before the study; no study has run.
 
-Use the [agent benchmark](architecture-and-product-plan.md#10-evaluation-dataset-and-benchmark-strategy) to test explicit/implicit routing, unsupported hosts, cloud-context projection, narrow filesystem access, consent replay, model failure, deterministic cross-client parity, report imports, and audit completeness. Test that all critical consent screens expose actual location/scope and that no visual score or language implies hiring success. Model bias/position-bias/entailment tests remain separate evaluation work; a pleasing interface does not validate the judge.
+Use the [agent benchmark](architecture-and-product-plan.md#10-evaluation-dataset-and-benchmark-strategy) to test routing through the executable, unsupported hosts, compact results, narrow filesystem access, changed/missing confirmation, duplicate sends, model failure, cross-client parity and report imports. Verify that previewed payloads match actual requests and that all three ZDR states, policy changes, local inference and relay/unknown routes are presented accurately. Test basic lint completion without privacy dialogs or MCP setup, and confirm no visual score or language implies hiring success. Model bias/position-bias/entailment tests remain separate evaluation work; a pleasing interface does not validate the judge.

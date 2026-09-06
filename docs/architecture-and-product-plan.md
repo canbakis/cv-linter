@@ -6,9 +6,11 @@
 
 ## 1. Product decision and claims policy
 
-**Recommend a distributable Agent Skills-compatible package with a deterministic local executable, first-class advisory LLM judging, and a shared PWA for visual inspection.** A local stdio MCP server and thin Hermes, Claude Code, and Codex adapters expose the same engine. The owner is considering this direction; it is an architectural recommendation, not a validated market conclusion.
+**Recommend a bundled local executable plus an Agent Skills-compatible package for MVP, with explicit advisory LLM judging and a shared PWA for visual inspection. MCP is optional and deferred beyond MVP.** Thin Hermes, Claude Code, and Codex adapters invoke the executable; no server setup is required. This is an architectural recommendation, not a validated market conclusion.
 
-The promise remains: understand how software reads your CV, identify possible information loss, and verify your fixes. Default `lint` parses and runs deterministic rules only. `judge` is a supported, visible, explicit operation from the initial release scope, with local inference preferred. Installing the skill, selecting an ATS profile, running lint, or configuring a model never authorizes a judge run. Remote inference requires opt-in provider configuration **and approval of the specific payload and destination**. No local failure may trigger a remote fallback.
+The promise remains: understand how software reads your CV, identify possible information loss, and verify your fixes. Default `lint` parses and runs deterministic rules locally, without a model or document upload. `judge` is a supported, visible, explicit operation from the initial release scope. When selected, show a concise disclosure that selected CV content (and selected job-description content, if used) goes to the chosen provider/model, label its **ZDR / non-ZDR / unknown** status, show the exact payload, and require **Send and judge** confirmation. An installed on-device judge uses the same preview and confirmation with **Run local judge** and an accurate local-processing label. Installing the skill, choosing a profile or model, and configuring credentials do not authorize execution. No failure may trigger an automatic remote fallback.
+
+Keep the ordinary experience to **choose CV → local findings → optional judge review and confirmation → separate advice**. Encryption setup, retention management, cryptographic receipts, host-output projection controls and detailed threat modeling are not MVP user workflows. Practical safeguards remain implementation requirements in section 8.
 
 This revises the earlier browser-first, rules-only-beta plan. Judge capability is included by default in the product and command contract; judge execution is never automatic. A release may mark an unevaluated model/task experimental or unavailable without hiding the judge workflow or moving its contract to an unspecified future phase.
 
@@ -36,9 +38,9 @@ Read and preserve the Luna memos as research inputs:
 - [Judge research](research/llm-judge-research.json): bounded tasks, validity limits, bias, injection, and local inference.
 - [ATS vendor research](research/ats-vendor-research.json): seven vendor profiles and their primary citations.
 
-The memos are unchanged. Their recommendations are not automatically accepted requirements. In particular, “judge disabled by default” is interpreted as **no implicit execution**, following the owner's requirement for first-class judge support. Recruiter-side pairwise candidate selection, eligibility filters, automatic rewriting, and application submission are outside this product's scope.
+The memos are unchanged. Their recommendations are not automatically accepted requirements. In particular, “judge disabled by default” is interpreted as **no implicit execution**, following the owner's requirement for first-class judge support. The distribution memo's suggestion that MCP should be the execution boundary is superseded by the executable-first MVP decision in section 6. Recruiter-side pairwise candidate selection, eligibility filters, automatic rewriting, and application submission are outside this product's scope.
 
-Source checks on 6 September 2026 revisited Agent Skills, host documentation, MCP tools, key vendor pages, and judge papers. This was a selective documentation check, not exhaustive recertification or tenant testing. Some Lever pages could not be fetched and Ashby content was not exposed by the text reader; retain those claims as **memo-attributed, pending source recheck**. iCIMS' accented-email limitation is also memo-attributed pending confirmation. Do not invent publication or last-verification dates for inherited claims. Workday and Taleo refinements below identify information found in the primary pages beyond the memo summary.
+The earlier planning pass records source checks on 6 September 2026 for Agent Skills, host documentation, MCP tools, key vendor pages and judge papers. This revision additionally checked the Agent Skills specification, MCP architecture/tools and provider retention documentation for the decisions below; it did not recheck the ATS profiles or judge research. These are selective documentation checks, not exhaustive recertification or tenant testing. Some Lever pages could not be fetched and Ashby content was not exposed by the text reader; retain those claims as **memo-attributed, pending source recheck**. iCIMS' accented-email limitation is also memo-attributed pending confirmation. Do not invent publication or last-verification dates for inherited claims. Workday and Taleo refinements below identify information found in the primary pages beyond the memo summary.
 
 ## 2. Audience, scope, and authority
 
@@ -46,7 +48,7 @@ Source checks on 6 September 2026 revisited Agent Skills, host documentation, MC
 
 Core tasks are to lint one explicitly selected CV, inspect extraction and evidence, request bounded advice when useful, compare the CV with a supplied job description, and verify a revised artifact. Support text-bearing PDF, DOCX, and plain text initially, with English semantic coverage declared explicitly. Unsupported language or unreadable input produces unknown outcomes or abstention.
 
-The product does not submit applications, rank applicants, decide hire/reject, verify qualifications, edit the original CV automatically, or generate credentials and metrics. Career gaps, identity, school/employer prestige, page count, fonts, and stylistic preferences are not compatibility defects. Research donation, export, model download, host-context disclosure, and remote judging are separate user actions.
+The product does not submit applications, rank applicants, decide hire/reject, verify qualifications, edit the original CV automatically, or generate credentials and metrics. Career gaps, identity, school/employer prestige, page count, fonts, and stylistic preferences are not compatibility defects. Research donation, export, model download, and judging are explicit actions; normal linting requires no privacy setup wizard.
 
 Measure success through verified correction of important defects, evidence comprehension, successful agent task completion, and useful grounded advice. Do not optimize for a higher internal score or persuasive model prose.
 
@@ -54,10 +56,10 @@ Measure success through verified correction of important defects, evidence compr
 |---|---|
 | `lint` | Deterministic parsing, rules, scoped vendor guidance, and evidence; no model initialization, model download, network request, or judge flag. |
 | `compare-to-job` | Deterministic requirement inventory and literal/versioned-vocabulary evidence retrieval. Required/preferred interpretations remain reviewable; no implicit embeddings or generative judging. |
-| `judge` | Explicit, criterion-level advisory review over an immutable evidence snapshot; local preferred, remote opt-in; validated output and audit receipt required. |
+| `judge` | Explicit, criterion-level advisory review over an immutable evidence snapshot; provider/model, ZDR status and exact payload reviewed and confirmed; validated output and basic run record required. |
 | `report` | Deterministic rendering/export or revision diff of existing reports. Never re-judges or re-lints behind a render action. |
 
-A generic request such as “check my CV” selects lint. A request for semantic advice selects the judge preparation flow and its model/payload disclosure. The host's conversational model is not automatically the CV Linter judge. Full command and MCP contracts are specified in the [skill architecture](agent-skill-architecture.md#3-command-and-api-contracts).
+A generic request such as “check my CV” selects lint. A request for semantic advice selects the judge preparation flow and its model/payload disclosure. The host's conversational model is not automatically the CV Linter judge. MVP commands and in-process APIs are specified in the [skill architecture](agent-skill-architecture.md#3-command-and-api-contracts); its later MCP sketch is not an MVP contract.
 
 ## 3. ATS evidence and vendor-specific implications
 
@@ -108,11 +110,11 @@ Position-bias research motivates order reversal and rubric permutations. [Shi et
 ### Judge protocol and validation
 
 1. Prepare an immutable snapshot of approved CV/JD spans, deterministic report, task and criteria. Record excluded/redacted content, parser uncertainty, token budget and retrieval coverage; never silently truncate.
-2. Disclose model/provider, artifact or snapshot identity, runtime, execution location, forwarding status, exact payload, retention implications and costs/limits. Local setup and remote transmission are different approvals.
-3. The trusted controller binds consent to that snapshot, destination, model, prompt/rubric, redaction policy, allowed attempts, and expiry. A model-generated `consent=true` is not authorization. A changed payload/model/destination invalidates consent.
+2. Show provider/model and execution location, **ZDR / non-ZDR / unknown** for provider requests, selected scope, the exact outbound payload and any cost estimate or cap. Keep policy source/date and runtime details available on demand. Local model download is a separate setup action.
+3. Require confirmation of that prepared request. The controller binds the decision to the payload, destination, model, prompt/rubric and limits; a model-generated `consent=true` is not authorization. Changes to the request or disclosure return it to review. Use ordinary controller-owned confirmation state; no cryptographic receipt system is required for MVP.
 4. Execute the judge without tools, filesystem access, browser actions, or authority to perform follow-up requests. The transport can send only the approved payload to the approved destination.
 5. Parse one JSON object using the [strict judge schema](agent-skill-architecture.md#5-strict-judge-output-schema), then validate evidence and semantics. Reject unknown fields, duplicate keys/criteria, invalid enums, extra criteria, unverifiable quotes and fabricated spans. Do not recover malformed output with an unbounded repair conversation.
-6. Append success, abstention, cancellation, refusal, invalid-output or execution-error events to a controller-owned audit record. Keep the deterministic report intact in every outcome.
+6. Record success, abstention, cancellation, refusal, invalid output or execution error in a controller-owned run record. Keep the deterministic report intact in every outcome.
 
 Each criterion carries a label (`supported`, `contradicted`, `insufficient_evidence`, or `abstain`), confidence category, exact evidence spans, missing-evidence explanation and concise rationale. Criterion-specific rubrics define what “supported” means; there is no holistic judge score. Confidence is uncalibrated unless a named calibration evaluation exists. Evidence existence is machine-checkable; whether it entails an advisory judgment still needs task validation and human review.
 
@@ -124,7 +126,7 @@ Support local batch inference through a pinned native runtime first, with a sele
 
 Compare rules/vocabulary, small local classifiers, small quantized instruction models, larger local candidates if needed, and an explicitly authorized remote reference. Model sizes, Mac feasibility, latency, and memory are unvalidated until benchmarked; do not mandate a 1–2B model based on size alone. Record weights/license/digest, quantization, runtime, context limit, prompt and decoding parameters. No automatic weight download, cloud model substitution, or silent model alias upgrade.
 
-Local capability is preferred, but all enabled model/task combinations need evidence quality, bias, injection, and performance gates. Browser inference is a later runtime option over the same judge contract. If no approved model is installed, show “Judge supported; model setup required” while lint remains available.
+Prefer an installed local model when suitable; users can select a supported provider/model without first installing local weights. All enabled model/task combinations need evidence quality, bias, injection, and performance gates. Browser inference is a later runtime option over the same judge contract. If no supported model is configured, show “Judge supported; model setup required” while lint remains available. Provider selection and confirmation can happen in one review flow; a separate privacy opt-in wizard is unnecessary.
 
 ## 5. Scoring rubric, validity, and explainability
 
@@ -238,39 +240,53 @@ Do not impose arbitrary penalties for page count, font brand, color, missing act
 
 ## 6. Layered distribution architecture
 
-| Layer | Proposed responsibility | Boundary |
+| Layer | MVP responsibility | Boundary |
 |---|---|---|
-| **Agent Skills-compatible core package** | `SKILL.md`, pinned executable helpers, rule/profile data, schemas, references, privacy policy and synthetic fixtures | Portable workflow format; instructions are not a sandbox |
-| **Local executable** | `lint`, `compare-to-job`, explicit `judge`, `report`; schema validation and local controller | Primary execution path; no requirement for an agent or server |
-| **Optional local stdio MCP server** | Typed wrappers over the same operations and session-scoped resources | No public listener, arbitrary shell, generic filesystem tools, or remote MCP in the initial release |
-| **Thin Hermes / Claude Code / Codex adapters** | Discovery, invocation, permission declarations, consent UI integration, safe result presentation | No duplicated parsing/rules/prompts and no host-model judging shortcut |
-| **Shared PWA client** | File selection, source highlights, reading-order inspection, consent review, report/audit display | Same core and schemas; browser workers or imported reports, not a second rules engine |
+| **Agent Skills-compatible package** | `SKILL.md`, pinned executable launcher, rule/profile data, schemas, references and synthetic fixtures | Workflow instructions; host permissions and the executable enforce access |
+| **Bundled local executable** | `lint`, `compare-to-job`, explicit `judge`, `report`; validated structured requests and results | Primary execution path, usable directly or through a skill without a server |
+| **Thin Hermes / Claude Code / Codex adapters** | Discovery, fixed-command invocation, judge confirmation and compact findings | Same core; no host-model judging shortcut |
+| **Shared PWA client** | Local file analysis, source highlights, judge request review where supported, report import and display | Browser-compatible core and schemas; no native server dependency |
+| **Optional MCP adapter — deferred** | Later typed tools over the same controller if integration demand warrants it | Separate optional distribution; no MCP runtime, launcher or server configuration in MVP |
 
-Agent Skills specifies a `SKILL.md` directory with optional scripts, references and assets; host tool allowances are not portable security enforcement. [Specification](https://agentskills.io/specification). Hermes documents skills and local MCP integration. [Skills](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills), [MCP](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp). Claude supports skill/plugin packaging and its own permission model. [Skills](https://docs.anthropic.com/en/docs/claude-code/skills), [plugins](https://docs.anthropic.com/en/docs/claude-code/plugins), [permissions](https://docs.anthropic.com/en/docs/claude-code/permissions), [security](https://docs.anthropic.com/en/docs/claude-code/security). Codex supports explicit/implicit skill activation with host-configured permissions. [Skills](https://developers.openai.com/codex/skills), [memo URL](https://developers.openai.com/codex/skills.md), [plugin skills](https://developers.openai.com/plugins/concepts/skills), [approvals/security](https://developers.openai.com/codex/agent-approvals-security), [permissions](https://developers.openai.com/codex/permissions).
+Agent Skills permits executable scripts alongside `SKILL.md`; it does not require MCP or define a sandbox. [Agent Skills specification](https://agentskills.io/specification). Host-specific invocation and permission behavior still needs release testing; a plugin wrapper is optional, and the executable works independently of a host.
 
-These are documented host capabilities; actual installation, namespace and permission compatibility must be tested by host version. A plugin is a host-specific release wrapper, not the only distribution. Do not require a plugin to run the portable executable.
+### Is MCP necessary?
+
+**No current MVP task requires MCP.** One selected CV, one optional JD, deterministic reports and an explicitly requested model call are covered by a bundled executable with JSON Schema validation and an Agent Skill describing how to invoke it. Direct inference adapters call the selected runtime/provider; MCP is not needed to call an LLM or enforce confirmation.
+
+MCP standardizes tool discovery and structured calls between compatible hosts and servers. It supports local stdio and remote HTTP transports; it does not determine how hosts use the returned context. [MCP architecture](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture), [tool schemas](https://modelcontextprotocol.io/specification/2025-11-25/server/tools). These capabilities motivate the following **conditional use cases**, not claims of current demand:
+
+| Concrete CV Linter use case | Bundled executable plus Agent Skill | Additional MCP value and recommendation |
+|---|---|---|
+| Check a CV, compare it to a JD, request advice and export a report in a coding agent | Fixed commands with structured inputs/results cover the complete workflow | Mostly duplicates command dispatch; use the executable for MVP |
+| Support a desktop assistant that can launch local MCP tools but cannot execute skill scripts or shell commands | Cannot integrate directly without another host facility; standalone CLI/PWA remains available | Local stdio tools could make CV Linter accessible in that host; first candidate for a later adapter after verifying the target host |
+| Offer consistent tool discovery and schemas across several MCP-capable assistants | Reuse one JSON contract, with small host invocation wrappers | Native tool menus and shared discovery may reduce integration work; add when measured adapter friction justifies maintaining a protocol integration |
+| Repeatedly inspect specific evidence spans, compare revisions and cancel a long judge run in an assistant | Report files/handles, bounded queries and process cancellation can support this | A running server could reuse evidence/model state and expose tool calls for these operations; benchmark before adding a server solely for this purpose |
+| Share a managed CV analysis service across devices or a career-support team | Local executable does not provide remote service access | Remote MCP is one possible API transport, with hosting, authentication and additional data recipients; outside MVP and requires a separate product decision |
+
+The tradeoff is integration convenience against another SDK/protocol dependency, server lifecycle, host configuration, version matrix, cancellation/error handling and support burden. Strict schemas, selected-file access, payload preview and confirmation are application controls available to both approaches. Neither a skill nor MCP creates a privacy guarantee. A browser PWA also cannot directly use native stdio; MCP does not eliminate the need for a separately designed browser bridge.
+
+**MVP:** ship the executable, skill, thin tested host adapters and shared PWA/report import. **Later:** add a separate local stdio MCP adapter only for a named target host that needs it or demonstrated cross-host workflow benefit; preserve CLI/API parity and the same judge confirmation. Keep remote MCP, MCP prompts and host model sampling out of MVP. Recheck the then-current protocol and target clients before choosing a version; inherited research citations are not a version commitment.
 
 ```mermaid
 flowchart TD
-    S[Agent Skill and thin host adapters] --> C[Local controller]
-    S --> M[Optional local stdio MCP]
-    M --> C
-    CLI[Local executable] --> C
+    S[Agent Skill and thin host adapters] --> CLI[Bundled local executable]
+    CLI --> C[Local controller]
     PWA[PWA file selection or report import] --> B[Browser controller]
     C --> E[Shared parser, evidence and deterministic rules]
     B --> E
-    E --> R[Versioned lint / job-evidence report]
-    R --> V[Agent-safe projection or local visual report]
-    C -. Explicit judge preparation .-> Q[Immutable payload and consent]
-    B -. Explicit judge preparation .-> Q
-    Q --> L[Approved local model]
-    Q -. Remote opt-in .-> X[Disclosed remote destination]
+    E --> R[Versioned lint and job-evidence report]
+    R --> V[Compact findings and visual evidence]
+    C -. Explicit judge request .-> Q[Provider/model, ZDR status, exact payload, confirmation]
+    B -. When a browser adapter is supported .-> Q
+    Q --> L[Selected on-device model]
+    Q --> X[Selected remote provider/model]
     L --> J[Validate advisory JSON and evidence]
     X --> J
-    J --> A[Separate advice and audit receipt]
+    J --> A[Separate advice and run details]
 ```
 
-The diagram is a logical sharing model, not a single shared runtime process. Browser workers schedule work; they are not security sandboxes. The PWA cannot speak stdio directly. Initially it runs browser-compatible core modules and imports explicitly exported report bundles. Any later authenticated loopback bridge is a separate deployment with pairing, host/origin checks, request limits and forwarding disclosure.
+This diagram shows the MVP paths; deferred MCP is not in their dependency chain. It is a logical sharing model, not a single shared runtime process. Initially the PWA runs browser-compatible core modules and imports explicitly exported reports, including native judge results. Browser workers keep the UI responsive; they are not security sandboxes. A future paired native bridge requires its own authenticated transport and browser-origin checks.
 
 ### Shared modules and canonical evidence
 
@@ -357,64 +373,65 @@ These are application resource budgets, not ATS rules. Tune them using measureme
 
 Legacy DOC, RTF, image files, and complex embedded objects remain unsupported initially. Provide local conversion guidance.
 
-## 8. Threat, privacy, consent and audit model
+## 8. Data handling and practical safeguards
 
-Original CVs, job descriptions, filenames, evidence, reports, hashes, embeddings and model responses can all be sensitive. Local execution does not by itself establish privacy: the host may forward tool arguments/results to its conversational model or retain transcripts. A remote agent runtime also means the executable is not running on the user's device.
+The product-facing rule is simple: **deterministic linting is local by default; an optional LLM judge runs only after the user reviews and confirms the selected model and exact payload.** For a provider request, say “Selected CV content will be sent to [provider] using [model],” include selected JD content when applicable, and show **ZDR / non-ZDR / unknown**. Put policy links and technical details behind a details control. Non-ZDR or unknown status does not prohibit judging; the user can confirm either after disclosure.
 
-### Two disclosure boundaries
+### ZDR is provider-policy metadata, not a guarantee
 
-1. **Agent-host context:** Before returning document-derived content to a cloud/unknown host, disclose the host destination and selected output. Default to opaque local report handles without excerpts, identifiers, hashes or document-specific summaries. The user can inspect the report locally or approve a specific projection for the host. A reduced summary is still data egress. If host behavior cannot honor this boundary, strict local use requires the standalone executable, PWA or a verified local host.
-2. **Judge inference:** Independently approve the model, location, forwarding path and exact minimized payload. Host-context permission is not permission for a separate judge provider. Configuring credentials or choosing an ATS is not transmission consent.
+ZDR describes the selected provider's applicable retention policy. It is not a CV Linter guarantee of deletion, confidentiality, no training, or the absence of all logs and exceptions. Eligibility alone does not establish that ZDR is enabled for this request. For example, Anthropic documents organization enablement, endpoint/feature scope, model-specific requirements and exceptions. [Provider retention documentation, checked 6 September 2026](https://platform.claude.com/docs/en/manage-claude/api-and-data-retention).
 
-A document already pasted into a cloud chat has crossed the host boundary; the skill cannot undo it. State the actual exposure rather than claiming the whole conversation remains on-device. Keep CV text and secrets out of command-line arguments; use explicit files, local handles or bounded standard input. Logs and shell transcripts need the same disclosure analysis.
+Use the following **CV Linter labeling policy**:
 
-### Enforced controls
-
-| Threat | Design control |
+| Label | Required basis for the selected request |
 |---|---|
-| Overbroad host or MCP file access | Controller allowlists and host/OS restrictions; scoped input handles, no generic read/search/exec tools |
-| Malicious documents | Validate signatures; bound archive entries/decompression/pixels/time/memory; never resolve external entities, relationships, links, fonts or images; cancel isolated parsing work |
-| Prompt injection | Treat CV/JD, metadata, hidden text and retrieved spans as data; inspect/flag suspicious imperative or encoded content; record excluded spans; abstain when safety or evidence integrity is uncertain |
-| Judge action escalation | No tools, shell, filesystem, browsing, messaging or hiring-system mutations; destination chosen by trusted configuration, never by model output; no automatic follow-up prompts or URLs |
-| Fabricated evidence | Strict JSON and reference checks against the approved snapshot; reject invalid replies before display; separate semantic entailment evaluation from exact quote matching |
-| Malicious previews/exports | Escape all document/model text; sanitize controlled rendering; reject scripts/unsafe link schemes; no remote assets in reports |
-| Dependency/model tampering | Verify signed artifact manifests and digests before reading a CV; approved pinned releases; no download or install-on-demand within lint/judge |
-| Accidental telemetry | No third-party analytics, session replay, content-bearing crash reports or automatic CV-derived diagnostics |
-| Retention/recreation after deletion | Explicit storage/export policy, cancellation, dependent-record deletion and cross-tab invalidation |
+| **ZDR** | Current provider documentation or contract and applicable account/project configuration support ZDR for this model, endpoint, features and route; record the evidence and verification date |
+| **non-ZDR** | Verified applicable policy/configuration retains request content outside a ZDR arrangement or otherwise excludes this request from ZDR |
+| **unknown** | Account enablement, policy scope, model/feature eligibility or forwarding is unverified, missing, stale or conflicting; never infer ZDR from a provider name, subscription, API key, “no training” claim or local URL |
 
-Delimiters and redaction help structure/minimize input but do not solve injection or identity-proxy bias. Flagging or excluding suspicious text must not rewrite native evidence or manufacture a clean lint report. OWASP discusses indirect prompt injection, including file-carried attacks. [Memo-linked guidance](https://owasp.org/www-project-top-10-for-large-language-model-applications/2_0_vulns/LLM01_PromptInjection.html), [current risk page](https://genai.owasp.org/llmrisk/llm01-prompt-injection/). Browser workers and local storage do not guarantee confidentiality. [OWASP browser guidance](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html). NIST's profile is a risk-management reference, not certification that this design satisfies every jurisdiction. [NIST AI 600-1](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf).
+Store `status`, provider/model/endpoint and feature scope, account-configuration evidence reference (without secrets), policy source URL or contract reference, `last_verified_at` (nullable), review-due date and a short caveat. Mark expired or mismatched evidence unknown; an undocumented user assertion is not verification. Policy checks use public documentation/configuration evidence and never a CV test upload. Refresh metadata during explicit setup/update or policy review, not by adding network activity to lint. Preserve the reviewed metadata with the run and recheck its applicability before sending.
 
-### Consent and audit lifecycle
+Disclose any relay or gateway that receives content. Overall status is non-ZDR if any verified recipient is non-ZDR; otherwise unknown if any recipient is unverified; ZDR only when applicable evidence covers every recipient. A fully on-device, non-forwarding judge is labeled **On this device · no provider transmission**; provider-policy ZDR is not applicable and local execution must not be relabeled “ZDR.” Unknown forwarding remains an unknown provider route. Policy changes or a different route require a refreshed disclosure and confirmation.
 
-Judge preparation is local and non-inferencing. A trusted local UI/controller freezes the payload and issues a single-use, expiring consent receipt following review. Bind it to input/report/payload hashes, task, criteria, model/provider/endpoint, prompt/rubric/redaction versions, retention disclosure, maximum attempts and resource/cost limits. CLI interactive confirmation is sufficient for the disclosed local run; remote configuration plus payload approval is always explicit. Headless/agent calls require a receipt or a narrowly preauthorized immutable batch, never blanket auto-approval. Do not prompt again for an unchanged, valid authorized operation.
+### Preview and confirmation
 
-Every attempted judge run has a controller-owned append-only event sequence: prepared, consented or declined, started, completed/abstained/invalid/error/cancelled. Include timestamps, run/request IDs, previous-event and current-event hashes, versions, input/payload/output hashes, selected span IDs, consent reference, execution location/forwarding disclosure, validation findings, uncertainty and actual resource use when known. Record failures too; null output hash means no output was obtained. Do not request or store hidden chain-of-thought; use concise evidence-based rationale.
+Preparation is local. Freeze the provider request body before review and render it as the exact payload: selected CV/JD passages, instructions, rubric, relevant report fields, model selection, generation parameters and any attachments or metadata actually submitted. Show the selected content in readable form plus the complete request representation; a field list or summary alone is insufficient. Omit unnecessary identity/contact fields by default when the task permits, and show any exclusions or redactions. Redaction does not promise anonymity. Never add undisclosed context, file uploads, fallback calls or server-side conversation identifiers after confirmation. Display the destination separately; do not expose API keys or authentication headers in the preview or report.
 
-Append-only means records are not rewritten during the retained run; it is not perpetual retention or tamper-proof storage. A local hash chain cannot prove that a machine owner did not replace the entire log. Session mode keeps the receipt with the in-memory result and offers export. CLI files require an explicitly allowed output directory; optional durable audit/history is encrypted. Minimal retained receipts omit raw CV/JD text, credentials and raw model output. An explicit encrypted evidence export may retain the exact payload for replay; hashes alone cannot reconstruct it. Deletion can remove an entire retained run and dependent data according to the selected retention policy.
+One **Send and judge** action confirms the prepared provider request; **Run local judge** confirms the on-device equivalent. Provider selection/setup alone is not confirmation. Bind the controller's confirmation state to the immutable request, recipient route, model, policy disclosure, task and limits; changes require review again. Use session-owned state and atomic run IDs to prevent accidental duplicate sends. MVP defaults to one attempt, with explicit retry after failure and no automatic model/provider fallback. A retry may have already incurred provider processing or cost; show what is known before asking to retry. Noninteractive judge execution without a trusted user confirmation returns `confirmation_required`. Cryptographic receipts and general headless batch authorization are deferred.
 
-### Storage, offline and remote transport
+### Implementation safeguards
 
-Default to no CV Linter persistence of document-derived data beyond the active session/operation. Explicit CLI report files and agent transcripts have separate lifecycles. PWA saving is an optional encrypted IndexedDB vault using reviewed authenticated encryption, passphrase-derived keys, random salts and unique nonces through established primitives. Never retain plaintext unlocking keys. [Web Crypto](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API). Encrypt filenames, bytes, findings and audit details; support export, lock, deletion, quota/migration failure and cross-tab cleanup. Browser eviction remains possible. [Storage lifecycle](https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria).
+These controls belong in the engine, adapters and release checks rather than a normal-user checklist:
 
-Bundle and self-host parser/WASM/font assets; cache only public app assets and separately approved model downloads. No document data in URLs, service-worker caches, error traces or localStorage. Restrict network destinations with CSP and runtime/OS controls where available. Model acquisition is a separate action showing source, license, size and checksum. Local inference must not forward or fetch missing artifacts. Loading/updating a hosted PWA contacts its host; claim no document-derived egress in local mode, not that app installation never uses the network.
+- Open only selected files/bytes and explicit output destinations; prevent path traversal, symlink escapes, input overwrite and broad directory scans. Keep credentials outside documents, reports and command arguments.
+- Bound document size, decompression, parser time/memory and rendered pixels. Disable external entities, document-linked network loads, embedded actions and scripts; sanitize previews and exports.
+- Keep deterministic commands free of model initialization and network requests. Bundle pinned parser assets and dependencies, verify release/model integrity, and make downloads/updates separate explicit actions.
+- Treat CV/JD content as untrusted data. Give the judge no tools, filesystem, browser or action authority. Validate structured output and evidence spans before showing advice; preserve deterministic results on every failure.
+- Use TLS for remote requests, approved destination configuration and secure credential storage. Reject unapproved redirects, relays and forwarding; local inference must not fetch missing weights or silently forward. Apply OS/runtime egress restrictions where available.
+- Keep CV text, payloads, secrets and raw model replies out of routine logs, telemetry and crash reports. Record a minimal run outcome with versions, destination/model, reviewed ZDR metadata, confirmation time, scope, validation and errors; hashes may support identity without becoming a cryptographic receipt or proof of provider deletion.
+- Default to session/operation storage plus explicit report export. Clean private temporary files on success, failure and cancellation; stop work on clear/cancel. Cache only public PWA assets and explicitly downloaded models, never documents in URLs, service-worker caches or localStorage.
 
-Remote judge capability is part of the contract; an enabled provider adapter must pass consent and privacy gates. Show exact endpoint, provider/model, any relay, selected content, redactions and limitations, verified retention/training terms or explicit unknowns, cost estimate or request cap. A relay is another recipient. Require TLS, allowlisted destinations, no content-bearing logs and no redirect/fallback to an unapproved host. Credentials live in explicit local secure configuration, not the skill tree, report or CV vault by default. Cancellation stops further work but cannot retract data already transmitted.
+The executable can return compact findings and necessary evidence to the invoking agent. State once in adapter setup/help that the host may process and retain chat/tool results under its own policies. Do not claim the whole conversation stays on-device, hide every finding behind opaque handles, or require a separate host-projection approval for each result. Avoid full-document dumps; offer standalone CLI/PWA for users who want to inspect results outside chat. CV Linter cannot control a host's unrelated tools or erase content already pasted into a conversation. A remote agent runtime must be labeled as such rather than described as on-device linting.
 
-An optional model service binds to loopback with authentication and restricted callers. A future PWA bridge additionally needs pairing and origin/host/CSRF/DNS-rebinding defenses. Do not infer local processing from `localhost`; unknown forwarding must be disclosed and cannot be represented as verified local inference. Self-hostable releases improve update control; encryption does not protect an unlocked app from compromised code, a compromised OS, or a privileged extension.
+### Deferred storage and service features
+
+MVP has no account, encrypted history vault, retention dashboard, deletion scheduler or hash-chained audit service. If user demand justifies durable history later, define deletion/export behavior and use established authenticated encryption and platform key storage; do not invent cryptographic primitives or promise that encryption protects an unlocked, compromised app. Exported files and host/provider copies are outside Clear session.
+
+A future localhost model service or PWA bridge needs authentication, restricted callers and origin/host protections; loopback alone does not establish non-forwarding inference. Remote services require a focused review of their actual additional recipients and access controls. Detailed threat modeling remains engineering work scoped to features being shipped, not an onboarding task or an MVP gate for hypothetical later systems.
 
 ## 9. Agent and PWA design direction
 
-The full [UI specification](ui-design.md) covers both surfaces, consent states, evidence navigation and judge auditability. Both present the same report and claim vocabulary: deterministic findings, advisory judgments and unknowns remain distinguishable.
+The [UI specification](ui-design.md) describes a short path from local findings to optional advice. Both surfaces use the same vocabulary: deterministic findings, advisory judgments and unknowns remain distinguishable.
 
-Agent UX starts with one selected path/content handle and `lint`. Give a compact, disclosure-safe result; approved detailed output includes rule IDs, observations, severity/certainty, evidence references, versions and unknown checks. Explain next actions without running them. Use a separate judge preparation/review action, preserve error/abstention states, and never replace executable results with a host-generated “ATS score.” If the host cannot safely show private evidence, point to a local report.
+Agent UX starts with one selected path/content handle and `lint` through the bundled executable. Return compact findings with evidence links and unknowns, then offer next actions. A brief setup/help note explains that chat/tool results follow the host's own data policies; normal results need no separate projection ceremony. MCP installation is not part of the MVP workflow.
 
-PWA UX starts with file selection or report import. Show source/extraction next to findings; PDF locations highlight pages, while DOCX is labeled “Reconstructed content.” Keep processing location, saved state, scope and versions visible. Provide a prominent **Request advisory review** action; do not hide judge support in an experimental settings menu. Model availability and evaluation status are distinct from whether the user has requested execution.
+PWA UX starts with file selection or report import. Show source/extraction next to findings; PDF locations highlight pages, while DOCX is labeled “Reconstructed content.” Use a small **Linted locally** status and lead with the most useful correction. Keep component versions and storage mechanics in Run details/help. A prominent **Request advisory review** action remains visible, with setup/handoff guidance when a model cannot run from that surface.
 
-Use clear statuses: Issue found, Needs verification, No issue detected by this check, and Not assessed. Lead with consequential findings and check coverage; defer a numerical index until calibrated. Severity is separate from observation confidence and unknown downstream effect. Source evidence opens in context, exclusions/truncation stay visible, and advice has its own model/prompt/consent/validation/audit details.
+Judge review shows provider/model, selected content, **ZDR / non-ZDR / unknown**, the exact payload and **Send and judge**. An installed local model instead shows **On this device · no provider transmission** and **Run local judge**, with the same preview and confirmation. Exclusions and any cost estimate or cap remain visible; policy source/date and technical settings are available on demand. No encryption, retention or receipt setup is required to check a CV or request advice.
 
-Remote review shows an exact payload and destination review before “Send and judge.” Local model setup displays source, size, progress and cancellation. User-approved wording is copied or exported; the original file is never rewritten by review. Reimporting a revision produces deterministic resolved/remaining/new findings and potential information loss; revision advice requires a new explicit judge request.
+Use Issue found, Needs verification, No issue detected by this check, and Not assessed. Advice has its own section and Run details; it never replaces deterministic results. Copy/export a suggestion without changing the original file. Reimporting a revision produces resolved/remaining/new findings and potential content loss; new advice requires a fresh request.
 
-Target WCAG 2.2 AA with keyboard operation, visible focus, semantic controls, readable tables, accessible progress/cancellation, non-color labels, adequate contrast and assistive-technology checks. Export previews show included identifiers/evidence/audit fields. Clearing session, deleting history and removing model assets are distinct controls.
+Target WCAG 2.2 AA with keyboard operation, visible focus, semantic controls, accessible payload review, non-color status labels and tested cancellation. Provide simple Export and Clear session actions. Saved history, encryption controls and a native bridge are deferred features.
 
 ## 10. Evaluation dataset and benchmark strategy
 
@@ -482,7 +499,7 @@ Freeze prompts, artifacts, runtimes, rubric versions, retrieval budgets and deco
 | Abstention | Failure to withhold judgment on unreadable or unsupported content |
 | Explainability | Correct source location; evidence supports the conclusion; fix preserves meaning |
 | Stability | Identical deterministic reports; model repeatability; invariance under harmless changes |
-| Privacy | Zero document-derived egress in local-mode network tests |
+| Data handling | No network from deterministic engine operations; provider sends match the confirmed payload/route; test host-result handling separately |
 | Performance | Cold/warm latency, peak memory, cancellation, and responsiveness by device |
 | Usability | Ability to locate, understand, and correctly fix a finding |
 
@@ -496,7 +513,7 @@ Freeze prompts, artifacts, runtimes, rubric versions, retrieval budgets and deco
 
 Report sample counts and uncertainty intervals alongside results. Use clustered analysis by document family where variants are related. If a rule lacks enough evidence, keep it experimental or unscored.
 
-A finite privacy test is release evidence, not proof against every possible vulnerability.
+Finite data-handling tests are release evidence, not guarantees about every vulnerability or a provider's actual retention.
 
 ### External ATS validation
 
@@ -522,17 +539,18 @@ Audit cultural and language assumptions in headings, dates, names, and education
 
 ### Agent workflow and package benchmark
 
-Extend the artifact corpus with versioned interaction scenarios; scenario counts and additional job-description sets are to be sized in Phase 0, not claimed as collected. Run the same fixtures through the executable, local stdio MCP, each supported host adapter and PWA where capabilities overlap. Record OS/architecture, host version/model, permissions, invocation style, local/remote placement and consent state.
+Extend the artifact corpus with versioned interaction scenarios; scenario counts and additional job-description sets are to be sized in Phase 0, not claimed as collected. Run the same fixtures through the executable, each supported host adapter and PWA where capabilities overlap. Add MCP conformance only if the deferred adapter is built. Record OS/architecture, host version/model, permissions, invocation style, execution location and confirmation state.
 
 | Scenario group | Required observations and proposed release gates |
 |---|---|
 | Discovery and installation | Fresh/offline install, explicit and implicit invocation, missing runtime/model, tampered package, checksum/signature mismatch, upgrade/rollback, incompatible report schema. No CV read before integrity checks pass. |
 | Command routing | “Check my CV” calls lint; job comparison stays deterministic; judge requires explicit request and authorization; report never triggers inference. Detect unwanted tool calls, downloads and retries. |
 | Filesystem isolation | Selected file only; spaces/Unicode/metacharacters in paths; traversal, symlink/replacement races, directory/glob scans and unauthorized outputs denied. No host-generated arbitrary shell substitutes. |
-| Consent | Deny/cancel, expired/replayed receipt, changed input/model/endpoint/redaction/prompt, redirect and model failure. Zero unauthorized sends or judge calls in the designed gate fixtures. |
-| Host-context privacy | No private evidence in cloud tool results before separate projection consent. Inspect tool arguments/results, logs, shell history, transcript retention and remote execution location. Test the entire host path, not just engine egress. |
+| Judge confirmation | Decline/cancel, missing/expired confirmation, duplicate request, changed input/model/route/payload/policy, redirects and failures. Preview must match the actual request; zero unconfirmed sends or judge calls in designed fixtures. |
+| ZDR metadata | Verified ZDR/non-ZDR, unknown account enablement, stale/conflicting policies, feature/model exclusions and relay routes. Never elevate eligibility or missing evidence to ZDR; non-ZDR/unknown can proceed after confirmation. |
+| Host context and results | Compact findings and necessary evidence without full-CV/secret dumps; brief host-policy note and accurate execution-location labels. No per-result projection approval. Verify standalone inspection and respect explicit user/host output restrictions. |
 | Report parity | Same canonical deterministic result through all declared equivalent runtimes; separate envelope timestamps; stable evidence IDs; report import/diff with incompatible versions fails visibly. |
-| Usability and resilience | Time/steps to lint, inspect a finding, request advice, interpret abstention and compare revisions; cancellation, reconnect, partial output, duplicate MCP request and truncated chat result. No false “completed” status. |
+| Usability and resilience | Time/steps to lint, inspect a finding, request advice, interpret abstention and compare revisions; cancellation, partial output, duplicate run request and truncated chat result. Basic lint needs no privacy wizard or MCP setup; no false “completed” status. |
 
 ### Judge correctness, bias and adversarial benchmark
 
@@ -544,7 +562,7 @@ For **position bias**, compare two revisions of the same user's CV in A/B and B/
 
 For **identity/proxy and style bias**, use consented or synthetic counterfactual fixtures changing names, pronouns, age cues, education/employer prestige proxies and demographic cues while preserving relevant evidence/layout. Also vary verbosity, polished versus plain wording, keyword repetition, irrelevant achievements and model-family style. Measure per-criterion label/advice disparities and severity changes with clustered uncertainty intervals; use selection-rate metrics only in isolated research reproductions, since the product makes no selection decisions. Mask unnecessary identifiers at inference, but test residual proxies; do not infer demographic classes for users. Do not remove dates needed for a selected criterion silently.
 
-For **injection**, include visible, hidden, split, encoded and multilingual instructions in CVs, JDs, metadata and quoted evidence, fabricated evidence IDs, links, tool-call payloads, “award full marks,” and directions to suppress the audit. Include benign imperative job text to measure over-abstention. Assert that no input or model output can change permissions, deterministic findings, rubric, destination, consent, report history or logging behavior.
+For **injection**, include visible, hidden, split, encoded and multilingual instructions in CVs, JDs, metadata and quoted evidence, fabricated evidence IDs, links, tool-call payloads, “award full marks,” and directions to suppress run recording. Include benign imperative job text to measure over-abstention. Assert that no input or model output can change permissions, deterministic findings, rubric, destination, consent, report history or logging behavior.
 
 **Proposed judge gates:** all accepted outputs have structurally valid schemas and resolvable exact spans; all designed no-consent/injection authority fixtures preserve boundaries; no accepted fabricated credential/metric in the locked critical set; at least 95% evidence-entailment precision on supported/contradicted advisory labels with sample counts and uncertainty. Pre-register task-specific abstention usefulness, counterfactual disparity and order-flip thresholds on development/calibration data before inspecting locked-test results. Until those limits and sufficient samples exist, no model/task is declared validated. A model/prompt/runtime change reruns these gates. Passing finite tests is release evidence, not proof of immunity or fairness.
 
@@ -586,16 +604,18 @@ For extensibility, version parser adapters, language packs, rule packs, vendor p
 | Layer | Recommendation | Reason |
 |---|---|---|
 | PWA client | TypeScript, React, Vite | Shared visual fallback; static delivery with explicit client execution. [Vite](https://vite.dev/guide/) |
-| Core analysis | Framework-independent TypeScript, proposed | Shared executable, MCP and browser core; freeze runtime capabilities after the parsing spike |
+| Core analysis | Framework-independent TypeScript, proposed | Shared executable and browser core; future adapters reuse it; freeze capabilities after the parsing spike |
 | Primary delivery | Agent Skills directory plus pinned local executable | Independent of host plugin managers; release runtime/OS matrix and verified artifacts |
 | Local execution | Supported pinned JavaScript runtime or packaged executable, selected in Phase 0 | No runtime installation during lint; use bounded parser child processes where supported |
-| Host integration | Thin Hermes/Claude/Codex adapters and optional stdio MCP | Identical core logic; controller-enforced permissions and consent |
+| Host integration — MVP | Thin Hermes/Claude/Codex adapters invoking the executable | Identical core logic; selected-file controls and judge confirmation |
+| MCP integration — deferred | Separate optional stdio adapter only after a demonstrated host/workflow need | Adds tool discovery/transport; not required for schemas, model calls or confirmation |
+| Remote judge | Explicit provider adapter with scoped ZDR policy metadata | Direct provider API, exact-payload preview and confirmation; no MCP or mandatory local-model installation |
 | Local judge | Pinned llama.cpp/GGUF candidate, subject to task evaluation | Native batch inference first; no browser feasibility assumption |
 | Browser background work | Dedicated Web Workers with typed messages | Responsive UI, cancellation, bounded task ownership; native parsing uses its declared process/runtime boundary |
 | PDF | PDF.js | Rendering and native extraction in one integration |
 | DOCX | Bounded ZIP/XML inspection; Mammoth as an aid | Preserve structural evidence without building a Word layout engine |
-| Optional PWA persistence | IndexedDB through `idb` | Explicit transactions and migrations over encrypted records. [idb](https://github.com/jakearchibald/idb) |
-| Encryption | Web Crypto with a reviewed vault format | Avoid custom cryptographic primitives |
+| MVP storage | Session memory/private temporary files and explicit exports | No vault, retention dashboard or account setup |
+| Durable history — deferred | Evaluate IndexedDB and established authenticated encryption/key storage if history is justified | Define export/deletion behavior with the feature; not an MVP dependency |
 | Browser model candidates | Transformers.js / ONNX Runtime Web | Later explicit inference adapters, subject to browser and task benchmarks |
 | Browser generative runtime | WebLLM, optional later adapter | Browser inference using WebGPU and workers. [WebLLM](https://webllm.mlc.ai/docs/) |
 | Tests | Vitest; browser automation; manual browser/device checks | Core regression tests plus actual runtime validation. [Vitest](https://vitest.dev/guide/) |
@@ -613,14 +633,14 @@ Choose the ZIP/XML dependencies and exact package versions during the parsing/se
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| **0 — Contracts, evidence and feasibility** | Claims policy; package/permission and consent contracts; strict schemas; first 20 annotated fixtures; local parser/runtime/model spikes; host permission and transcript study; preregister benchmark protocol | Source scope register, supported platforms/input limits, local model candidates, threat model and testable contracts agreed; unknowns visible |
-| **1 — Portable deterministic core** | Skill directory, verified executable, manifests/locks/checksums, lint, baseline compare-to-job, evidence report/export/diff, initial justified rules | Offline operation; allowlists/resource limits; deterministic regression and zero-egress fixtures; no inference from lint/compare/report |
-| **2 — Advisory judge as a first-class path** | Explicit prepare/consent/run, pinned local model adapter, strict JSON/semantic validation, abstention, audit, injection and bias corpus; remote opt-in contract exercised with mock transport | At least one local model/task passes declared judge gates or is clearly experimental pending evidence; failure never alters lint; no silent host-model substitution |
-| **3 — Agent distribution and visual fallback** | Hermes pilot plus Claude/Codex conformance; optional stdio MCP; shared PWA source/evidence/audit view and report import; release/install/rollback flow | Host-routing, disclosure, consent, parity, package-integrity and accessibility gates pass across the declared matrix |
-| **4 — Validated beta** | Locked parser/rule/judge/workflow benchmarks; usability study; documentation-profile review; authorized ATS pilot when available; real remote adapter only after provider/consent gates | Publish methods, actual results and limitations; require a validated local judge task for the intended full beta; otherwise name the remaining validation gap explicitly |
-| **5 — Conditional extensions** | OCR, additional languages/models, encrypted durable history, browser inference, paired local bridge, broader authorized ATS validation | Each extension demonstrates value and preserves provenance, permission, consent, audit and resource controls |
+| **0 — Contracts, evidence and feasibility** | Claims policy; executable/API and judge confirmation contracts; exact-payload/ZDR metadata design; first 20 annotated fixtures; parser/runtime/model spikes; host invocation check; preregister benchmarks | Supported platforms/input limits, model candidates, scoped safeguard review and testable contracts; no MCP or vault design prerequisite |
+| **1 — Portable deterministic core** | Skill directory, verified executable, manifests/locks/checksums, lint, baseline compare-to-job, evidence report/export/diff, initial justified rules | Offline engine operation; selected-file/resource limits; deterministic regression and no-network fixtures; no model use from lint/compare/report |
+| **2 — Explicit advisory judge** | One review/confirmation flow, local runtime candidate and selected-provider adapter, exact payload and ZDR metadata, output/evidence validation, abstention and basic run records; exercise mock transport before real provider calls | Supported tasks are evaluated or clearly experimental; preview matches actual request, all ZDR states are accurate, confirmation/duplicate/cancel controls pass; failure never alters lint |
+| **3 — MVP distribution and visual inspection** | Hermes pilot plus Claude/Codex conformance over fixed commands; shared PWA source/evidence view and report import; judge handoff; release/install/rollback | Useful lint findings without privacy setup; one judge review/confirmation; routing, parity, integrity and accessibility checks pass on declared platforms; no MCP dependency |
+| **4 — Validated beta** | Locked parser/rule/judge/workflow benchmarks; usability study; profile review; authorized ATS pilot when available | Publish methods, results and limitations; a validated local judge task remains the target for the full beta, with any unmet validation gap explicit |
+| **5 — Conditional extensions, beyond MVP** | Optional local stdio MCP for a demonstrated integration need; OCR, additional languages/models, durable history if useful, browser inference, paired local bridge and broader ATS validation | Demonstrate user benefit per feature; retain provenance, confirmation and resource controls; test MCP conformance only for that optional release |
 
-Judge implementation and evaluation begin before beta, not as optional post-beta scope. Remote provider support can ship behind explicit opt-in once reviewed; it is never the default and does not block local use. Optional MCP is not a dependency of the executable or skill. The PWA is a shared visual client, not a new rule implementation.
+MVP delivery is phases 1–3 after the feasibility work; phase 4 adds the evidence for validated-beta claims. Judge support is included before beta, with no implicit execution. A selected remote provider can ship once its adapter passes payload, confirmation, ZDR-labeling and transport checks; unknown policy metadata must remain unknown rather than delaying basic local lint. Local models are preferred when suitable, not a mandatory setup detour before a user selects a supported remote model. MCP, encrypted history, cryptographic receipts and retention management are not MVP release gates. The PWA is a shared visual client, not a new rule implementation.
 
 Numerical compatibility scoring remains conditional on rubric validity, independent of judge availability. Ship findings/severity/check coverage if an index cannot be defended. Defer autonomous rewriting, template generation, candidate ranking, account synchronization, automated applications, and broad multilingual semantic scoring.
 
@@ -629,27 +649,29 @@ Numerical compatibility scoring remains conditional on rubric validity, independ
 | Risk / unvalidated assumption | Response or validation work |
 |---|---|
 | Agent-first distribution is the strongest product channel | Interview agent users and non-agent users; measure install and task completion; retain standalone CLI/PWA |
-| Users equate a skill/local executable with private end-to-end processing | Test host context/output/transcript behavior; show separate host and judge disclosure; offer strict standalone local use |
+| Users equate a local executable with an entirely local conversation | Brief host-policy note, accurate runtime labels and compact results; standalone CLI/PWA inspection available |
+| Provider-policy labels overstate what is known | Verify account/model/endpoint/feature/route scope or show unknown; source/date/caveats available; no guarantee or inferred ZDR |
+| MCP expands setup and maintenance without enough benefit | Defer beyond MVP; require a concrete unsupported host or measured workflow benefit before a separate adapter |
 | Models look persuasive while making false claims | Evidence/entailment gates, abstention, criterion-level labels, objective fixtures and user review |
 | Local hardware/model quality is insufficient | Benchmark actual target devices; supported/experimental task registry; no remote fallback |
 | Vendor facts are applied beyond workflow or edition | Source scope/status registry, conservative unknowns, explicit tenant requirements and authorized validation |
 | PWA/native reports diverge | Shared core/schema and parity fixtures; declare capability differences and incompatible results |
 | Supply-chain or host modifications change execution | Signed versioned artifacts, trust-root verification, installation checks and no self-modifying production package |
-| Auditability conflicts with data minimization | Minimal session receipts by default; explicit encrypted evidence/history exports and deletion semantics |
+| Run reproducibility adds unnecessary storage or UX | Basic session run records and explicit exports; defer durable history and cryptographic receipts |
 | Reproducibility is overstated | Separate deterministic payload from run metadata; record but do not promise model replay equality |
 
-Open decisions are which cohort/market and OS/host versions to support first, whether English-only semantic analysis is acceptable, the validated local model/task set, authorized ATS access, whether persistent history and a numerical index improve decisions, and a sustainable licensing/funding model. **Whether judge support belongs in the architecture is settled by the owner's direction; model selection and measured scope remain open.**
+Open decisions are which cohort/market and OS/host versions to support first, whether English-only semantic analysis is acceptable, the validated local model/task set, authorized ATS access, whether persistent history and a numerical index improve decisions, and a sustainable licensing/funding model. **Judge support is included; MCP is deferred beyond MVP. Model selection and measured scope remain open.**
 
-Recommended product defaults: one selected input, no account or telemetry, no CV Linter persistence unless requested, deterministic lint and comparison, visible explicit advisory judge, local inference preferred, remote inference separately configured and consented, minimal host exposure, and findings before scores.
+Recommended defaults: one selected input, deterministic local lint/comparison, findings before scores, no account or content telemetry, session storage plus explicit exports, and a visible optional judge. Judge selection leads to provider/model, ZDR status, exact payload and one confirmation; local inference uses an accurate on-device label. No MCP or privacy setup is needed for basic use.
 
 ## 15. Next implementation work, when authorized
 
-1. Turn the three documents into scoped tickets for contracts, fixtures, parser evidence, package verification, local inference and host boundaries.
+1. Turn the three documents into MVP tickets for the executable/skill, fixtures, parser evidence, package verification, judge adapters and one review/confirmation flow; keep MCP and durable history in a separate deferred backlog.
 2. Annotate the first 20 representative artifacts and matched job descriptions; define objective and advisory labels with two-reviewer adjudication.
 3. Prototype shared extraction and immutable evidence mapping through the local executable; establish filesystem/network observation before adding models or persistence.
 4. Specify the first ten rules with scope, source provenance, applicability, abstention, evidence and correction guidance.
-5. Exercise the judge schema and consent state machine on synthetic inputs; freeze a task-specific rubric and evaluate local candidates before selecting one.
-6. Validate explicit/implicit host invocation and private result handling, then test the PWA evidence and consent flow with a proposed five to eight users.
+5. Exercise payload-preview equality, confirmation, all three ZDR states and the judge schema with synthetic inputs; freeze a task rubric and evaluate supported model candidates.
+6. Validate host invocation and compact findings, then test local lint, PWA evidence inspection and judge disclosure/confirmation with a proposed five to eight users; measure steps and comprehension.
 7. Freeze release gates before a locked benchmark; publish no scores, pass rates, performance claims or supported ATS predictions without results.
 
 These are proposed future tasks. This revision creates planning documentation only and authorizes no application implementation, installation, deployment, provider submission or commit.
