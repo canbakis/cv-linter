@@ -1,0 +1,133 @@
+{
+  "title": "CV Linter distribution options: agent skills, plugins, MCP, and PWA",
+  "options": [
+    {
+      "option": "Hermes Agent skill with bundled deterministic scripts",
+      "pros": [
+        "Portable skill format: a directory with SKILL.md plus optional scripts, references, and assets; Hermes states compatibility with the open Agent Skills standard.",
+        "Invocation is convenient: users can invoke an installed skill explicitly as /cv-linter, and Hermes can also select it from its description; multiple skills can be stacked in one command.",
+        "Hermes supports local skill directories, profile isolation, optional skill installation, and skill distribution through its hub or an HTTPS SKILL.md URL.",
+        "A CV parser and rule engine can run locally as bundled scripts, avoiding upload of the CV or job description.",
+        "Inference: this is the best native UX for a Hermes-first product because it combines a discoverable slash command with local executable logic."
+      ],
+      "cons": [
+        "A skill is primarily instructions plus scripts, not a strongly typed capability boundary. File access and command execution remain dependent on the host agent's permissions.",
+        "Hermes skills can be modified or deleted by the agent, so a production distribution should protect or verify the installed package if tamper evidence matters.",
+        "LLM selection can be implicit unless the skill explicitly requires a separate confirmation step; this is unsuitable for a silent or unrecorded LLM-as-judge default.",
+        "Hermes skill metadata is not, by itself, a complete dependency-locking or supply-chain mechanism; the package should add checksums, a manifest, and pinned parser/model versions."
+      ],
+      "sources": [
+        "https://hermes-agent.nousresearch.com/docs/user-guide/features/skills",
+        "https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp",
+        "https://agentskills.io/specification"
+      ]
+    },
+    {
+      "option": "Claude Code skill or Claude Code plugin",
+      "pros": [
+        "Claude Code supports the same general SKILL.md format and progressive disclosure model, making a core CV Linter skill potentially reusable across compatible agents.",
+        "A standalone skill is suitable for personal or project-local workflows; a plugin is explicitly intended for sharing, reusable distribution, and versioned releases.",
+        "Claude Code plugins can package skills together with agents, hooks, and MCP servers, allowing a CV Linter plugin to include deterministic helpers and a typed tool interface.",
+        "Claude Code provides explicit permission controls for file reads, shell commands, edits, web access, and MCP servers, which supports a least-privilege integration.",
+        "Inference: the plugin form is more appropriate than a bare skill when CV Linter needs a stable namespace, release metadata, optional hooks, or an MCP server."
+      ],
+      "cons": [
+        "The plugin's namespace changes invocation UX: users invoke names such as /cv-linter-plugin:check rather than a short global command.",
+        "Claude Code permissions govern the host integration, but the SKILL.md itself does not create a cryptographic or OS-level privacy boundary.",
+        "Claude can automatically invoke some skills when relevant, so the skill must explicitly state that LLM judging is opt-in and must not be inferred from a normal deterministic check.",
+        "Claude Code is tied to Claude Code's permission model and plugin manager, so this is not a universal distribution format by itself."
+      ],
+      "sources": [
+        "https://docs.anthropic.com/en/docs/claude-code/skills",
+        "https://docs.anthropic.com/en/docs/claude-code/plugins",
+        "https://docs.anthropic.com/en/docs/claude-code/permissions",
+        "https://docs.anthropic.com/en/docs/claude-code/security"
+      ]
+    },
+    {
+      "option": "Codex skill, optionally distributed through a Codex plugin",
+      "pros": [
+        "Codex skills package SKILL.md instructions, optional scripts, references, and assets, and build on the open Agent Skills standard.",
+        "Codex supports both explicit invocation through /skills or $skill mentions and implicit activation from the skill description.",
+        "Codex uses progressive disclosure and limits the initial skill-description budget, which helps keep a CV-specific workflow from consuming excessive context.",
+        "Codex's sandbox and approval model can limit reads, writes, network access, and execution; read-only mode is suitable for deterministic linting.",
+        "OpenAI's plugin documentation describes skills as the workflow layer around MCP tools, making a Codex plugin a plausible package for a deterministic local engine plus optional model judging.",
+        "Inference: Codex is a strong secondary target if the core package remains Agent Skills-compatible and the deterministic engine is callable without trusting model-generated shell commands."
+      ],
+      "cons": [
+        "Codex's implicit activation means a normal request could trigger the skill unless the description and instructions impose an explicit judge-consent gate.",
+        "Scripts may require separate approval depending on sandbox and approval configuration, which can add friction to first use.",
+        "Codex's filesystem boundary is configured by the host and workspace; the skill cannot guarantee privacy independently of those settings.",
+        "Codex plugin packaging is newer and more host-specific than the base Agent Skills directory format, so a plugin-only release would reduce portability.",
+        "Inference: deterministic checks should be exposed as a bounded executable or MCP tool rather than asking Codex to reproduce parsing logic through free-form commands."
+      ],
+      "sources": [
+        "https://developers.openai.com/codex/skills.md",
+        "https://developers.openai.com/plugins/concepts/skills",
+        "https://developers.openai.com/codex/agent-approvals-security",
+        "https://developers.openai.com/codex/permissions",
+        "https://agentskills.io/specification"
+      ]
+    },
+    {
+      "option": "Local or remote MCP server exposing CV Linter tools",
+      "pros": [
+        "MCP provides a standardized tool interface for live capabilities, and can also expose resources and prompts; this maps naturally to parse_cv, lint_cv, compare_to_job, and judge_cv operations.",
+        "A local stdio MCP server can keep parsing and deterministic checks on the user's machine, while a separately configured remote model provider can be optional.",
+        "Tool schemas make inputs and outputs more auditable than a prompt-only skill: the server can require explicit fields such as cv_path, job_description, ruleset_version, judge_enabled, model_id, and consent_token.",
+        "MCP clients are expected to validate inputs and outputs, request confirmation for sensitive operations, show tool inputs, apply timeouts, and log tool usage.",
+        "Hermes supports local stdio and remote HTTP MCP servers, automatic discovery, per-server filtering, and MCP resources/prompts."
+      ],
+      "cons": [
+        "MCP itself does not guarantee privacy: a remote server can receive CV content, and even a local server may be given overly broad filesystem access by its client configuration.",
+        "Installation and configuration are more complex than installing a skill, especially for users who only want an interactive CV review.",
+        "A prompt exposed through MCP can still be manipulated by untrusted document content; the server must treat CV and job-description text as data, not instructions.",
+        "MCP tool approval and logging behavior depends partly on the client, so CV Linter should maintain its own structured audit record rather than relying only on client logs.",
+        "Inference: MCP should be the execution boundary for deterministic operations and optional judging, while the Agent Skill should supply the human-facing workflow and explanation."
+      ],
+      "sources": [
+        "https://modelcontextprotocol.io/specification/2025-11-25",
+        "https://modelcontextprotocol.io/specification/2025-11-25/server/tools",
+        "https://modelcontextprotocol.io/specification/2026-07-28/server/prompts",
+        "https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp"
+      ]
+    },
+    {
+      "option": "Standalone browser application or installable PWA",
+      "pros": [
+        "A browser/PWA has a familiar drag-and-drop workflow and does not require users to install an agent, skill manager, or MCP client.",
+        "Browser file selection provides a naturally narrow boundary: the app receives files the user explicitly selects rather than arbitrary paths on disk.",
+        "A PWA can cache application resources with a service worker and support offline deterministic checks when its parser and rules engine are shipped locally.",
+        "The File System API and origin-private file system can support local processing and local result storage without granting unrestricted native filesystem access.",
+        "Inference: the PWA is the strongest fallback for non-agent users and the best visual report surface, but not the best sole distribution mechanism for agent workflows."
+      ],
+      "cons": [
+        "Browser file-system capabilities vary by browser and platform; PWA file handlers are currently limited in important ways, including Chromium-oriented support.",
+        "A hosted PWA can silently make network requests unless the application clearly surfaces network state and provides an offline-only mode.",
+        "A browser sandbox cannot itself run every native parser or local model; WebAssembly or client-side model packaging may increase download size and implementation complexity.",
+        "Agent invocation is indirect: an agent generally cannot inspect a user's selected file or PWA state without an explicit bridge such as upload, local API, or MCP server.",
+        "Browser storage can be evicted or cleared, so audit records should be exportable and should not rely solely on local browser storage.",
+        "Inference: the PWA should consume the same versioned lint-result schema as the agent integrations rather than becoming a separate rules implementation."
+      ],
+      "sources": [
+        "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable",
+        "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation",
+        "https://developer.mozilla.org/en-US/docs/Web/API/File_System_API",
+        "https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Associate_files_with_your_PWA"
+      ]
+    }
+  ],
+  "recommendation": "Use a layered distribution architecture: (1) publish a versioned, Agent Skills-compatible core package containing SKILL.md, deterministic parser/linter scripts, rule definitions, schemas, fixtures, and an explicit privacy policy; (2) expose the deterministic engine through a small local executable and optionally a local stdio MCP server with narrowly scoped operations; (3) ship thin adapters for Hermes, Claude Code, and Codex, using each host's native skill/plugin packaging but keeping the core logic identical; and (4) retain the PWA as a visual, drag-and-drop client over the same engine and result schema. Make `lint` the default and strictly deterministic: parse only user-selected paths or content, never recursively scan home directories, never make network requests, and return rule IDs, evidence spans, ruleset version, parser version, input hashes, and warnings. Make `judge` a separate explicit operation or flag, disabled by default. Before judging, show a consent summary naming the model/provider, whether CV text leaves the device, fields that will be sent, estimated cost if available, and retention/training implications. Support local models as the privacy-preserving judge option and remote models only through opt-in provider configuration. Record an append-only audit object for every judge run containing consent timestamp, model/provider identifier, model and prompt-template versions, ruleset/parser versions, input and output hashes, redaction policy, findings, and uncertainty. Do not allow the LLM judge to override deterministic failures; label its output as advisory, include evidence excerpts and rubric scores, and require structured JSON validation. Version the package with SemVer, pin parser/ruleset/prompt-template versions independently, embed a manifest and checksums, publish signed release artifacts, and make reports reproducible by recording all version identifiers. This recommendation is an architectural inference based on the cited capabilities and limitations, not a stated requirement of any one platform.",
+  "privacy_notes": [
+    "Default data path should be local: user-selected file or pasted text goes to the local parser, deterministic rule engine, and local report generator without network access.",
+    "Treat file access as an allowlist, not a capability inferred from the current working directory. Accept explicit paths or bytes, reject traversal and symlink escapes where applicable, and do not scan unrelated directories.",
+    "Separate deterministic linting from LLM judging at the API, UI, and audit-log levels. A request to lint must never implicitly upload the CV or invoke a model.",
+    "When remote judging is enabled, send the minimum necessary content, preferably redacted or chunked, and disclose the exact provider endpoint and model identifier before transmission.",
+    "Treat CVs, job descriptions, and extracted document metadata as untrusted data. Prompt-injection text inside a document must not alter tool permissions, network policy, rubric, or audit behavior.",
+    "MCP clients should be configured with a local stdio server and narrowly scoped paths; remote MCP should be considered data egress and require separate consent.",
+    "Agent hosts provide different permission guarantees. Hermes skills rely heavily on host permissions, Claude Code and Codex provide approval/sandbox controls, and a PWA provides browser-origin isolation; CV Linter should enforce its own validation and audit layer across all adapters.",
+    "Persist hashes and structured findings by default rather than raw CV text. Offer an explicit export containing the original text only when the user requests it.",
+    "A report should distinguish deterministic findings, LLM-advisory findings, and unresolved or low-confidence findings. Never present an LLM score as an objective lint result.",
+    "Use pinned versions for rules, parser, prompt template, judge model, and adapter package. Include these identifiers in every report so a later rerun can explain differences."
+  ]
+}

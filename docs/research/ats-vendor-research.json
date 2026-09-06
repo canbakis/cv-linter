@@ -1,0 +1,126 @@
+{
+  "title": "ATS compatibility research memo for a local-first CV linter",
+  "findings": [
+    {
+      "system": "Greenhouse",
+      "facts": [
+        "Vendor fact: Candidate uploads support DOC, DOCX, PDF, RTF, and TXT; the general candidate-upload limit is 100 MB.",
+        "Vendor fact: Greenhouse resume parsing can auto-fill candidate profile fields, but parsing is separate from file acceptance.",
+        "Vendor fact: The resume parser cannot parse files larger than 2.5 MB. Documented failure modes include image-based resumes, graphics/photos/word art, complex tables, headers or footers containing contact details, column layouts, unclear sections, and incomplete job titles.",
+        "Vendor fact: Failed or partial parses require manual entry or correction.",
+        "No official source reviewed states that Greenhouse automatically rejects candidates solely because a resume parse fails."
+      ],
+      "sources": [
+        "https://support.greenhouse.io/hc/en-us/articles/360052218132-Supported-formats-for-resumes-cover-letters-and-other-candidate-uploads",
+        "https://support.greenhouse.io/hc/en-us/articles/200989175-Unsuccessful-resume-parse"
+      ],
+      "implication": "Design implication (inference): Check extension and MIME type separately from parser-risk heuristics; flag PDFs over 2.5 MB, image-only/scanned documents, columns, tables, text boxes, headers/footers, decorative graphics, and split-letter text. Do not claim that passing these checks guarantees Greenhouse acceptance or hiring progression."
+    },
+    {
+      "system": "Lever",
+      "facts": [
+        "Vendor fact: Lever parses Microsoft Word including DOCX, Adobe PDF, RTF, Corel WordPerfect, HTML, MS Office HTML, and OpenOffice ODF.",
+        "Vendor fact: Lever cannot parse image files such as JPG or PNG; the vendor recommends testing whether text can be highlighted and converting scanned documents to a text-bearing format.",
+        "Vendor fact: Parsed information is added to candidate profile fields, including name, organization, contact details, and work history.",
+        "Vendor fact: Lever search has a Resume filter that restricts matching to content parsed from the resume, excluding terms found elsewhere such as notes and feedback.",
+        "Vendor fact: A separate advanced-search feature can search parseable content attached to candidate profiles and opportunities, including resumes, notes, and feedback."
+      ],
+      "sources": [
+        "https://help.lever.co/hc/en-us/articles/20087345054749-Understanding-resume-parsing",
+        "https://help.lever.co/hc/en-us/articles/20087317030685-Searching-the-Database-for-Candidates",
+        "https://help.lever.co/hc/en-us/articles/20087212721309-Using-advanced-search-and-rediscovery"
+      ],
+      "implication": "Design implication (inference): Treat text extractability as a first-class compatibility test and distinguish resume-only keyword visibility from broader profile search. Support the documented formats but warn that format support does not imply successful extraction."
+    },
+    {
+      "system": "Workday Recruiting",
+      "facts": [
+        "Vendor fact: Workday documentation describes resume parsing as enabling recruiters to create a prospect or job application when attaching a resume.",
+        "Vendor fact: Workday's public documentation reviewed does not specify a definitive list of accepted resume extensions, parser field schema, parser size limit, or detailed layout failure modes.",
+        "Vendor fact: Workday marketing describes parsing as extracting details such as education and skills, and describes automated resume ranking/keyword filtering as a recruiting capability.",
+        "No official source reviewed establishes a universal Workday rejection rule based only on resume format or parser output."
+      ],
+      "sources": [
+        "https://doc.workday.com/admin-guide/en-us/human-capital-management/recruiting/candidates/set-up-prospects-and-candidates/hdc1552497830785.html",
+        "https://www.workday.com/en-us/topics/hr/applicant-tracking-system.html",
+        "https://www.workday.com/en-us/topics/hr/applicant-tracking-software.html"
+      ],
+      "implication": "Design implication (inference): Implement Workday checks as conservative, generic document-quality warnings unless an employer provides instance-specific requirements. Label Workday-specific format and scoring claims as unknown rather than presenting a generic score as predictive."
+    },
+    {
+      "system": "Ashby",
+      "facts": [
+        "Vendor fact: Uploading a resume parses it so candidate information is filled into the candidate profile.",
+        "Vendor fact: Candidate search includes full-text resume search plus filters such as location, interview stage, tags, and projects.",
+        "Vendor fact: Full-text resume search supports exact-word matching, exact-phrase matching, case-sensitive equality, related-word matching, Boolean AND/OR/NOT, prefix wildcards, and grouping.",
+        "Vendor fact: Application file-upload questions support standard document, image, and video types, including PDF, DOC, DOCX, JPG, JPEG, PNG, and common video formats, up to 50 MB; executable files and some text formats such as Markdown are unsupported.",
+        "Vendor fact: Ashby archives/rejects a candidate for a job consideration through an explicit workflow action and archive reason; the documentation does not say that a parser failure itself automatically rejects an applicant."
+      ],
+      "sources": [
+        "https://docs.ashbyhq.com/candidate-profile",
+        "https://docs.ashbyhq.com/candidate-search",
+        "https://docs.ashbyhq.com/candidate-files-and-file-categories"
+      ],
+      "implication": "Design implication (inference): Optimize for searchable, text-bearing resume content and test exact terms, phrases, variants, and Boolean behavior. Keep upload compatibility distinct from resume parsing: Ashby's general file-upload support includes images, but that does not prove image resumes are parseable."
+    },
+    {
+      "system": "iCIMS",
+      "facts": [
+        "Vendor fact: The candidate guide says resume uploads may populate profile fields and recommends uploading before completing other fields to make full use of parsing.",
+        "Vendor fact: Career portals are highly configurable; available upload providers, required fields, application steps, and screening questions vary by employer portal.",
+        "Vendor fact: Candidates may be required to answer screening, EEO, and job-specific questions before submission.",
+        "Vendor fact: iCIMS search can use searchable Job, Person, and Recruiting Workflow fields; simplified candidate search accepts a job title, keyword or skill, and optionally a location.",
+        "Vendor fact: An iCIMS data-migration document states that resume parsing is not 100% accurate and may not produce a complete candidate profile.",
+        "Vendor fact: The candidate guide documents an iCIMS limitation that email addresses with accented characters are unsupported."
+      ],
+      "sources": [
+        "https://community.icims.com/articles/HowTo/Candidate-Guide-to-the-iCIMS-Talent-Platform",
+        "https://community.icims.com/articles/FAQ/Searching-Reporting-FAQ",
+        "https://community.icims.com/servlet/servlet.FileDownload?file=0151L00000Schpu"
+      ],
+      "implication": "Design implication (inference): Avoid claiming one universal iCIMS file-format contract. Provide employer-configurable checks, validate required structured fields and screening-question readiness, and warn that parsed profiles require human verification."
+    },
+    {
+      "system": "SmartRecruiters",
+      "facts": [
+        "Vendor fact: The resume-parse API returns structured candidate data including first name, last name, email, phone, location, web profiles, education, and experience.",
+        "Vendor fact: The API reports explicit UNPARSABLE_RESUME errors, including when the supplied resume is an image, and INCOMPLETE_RESUME when required information is missing.",
+        "Vendor fact: Application attachments are Base64-encoded, limited to 2 MB per file, and accept PDF, DOC/DOCX, RTF, JPG, and PNG.",
+        "Vendor fact: Required screening-question answers must be supplied when configured; supported question types include text, textarea, radio, checkbox, single-select, multi-select, date, currency, and repeatable questions.",
+        "Vendor fact: Text and textarea screening answers are limited to 4 kB.",
+        "Vendor fact: The documented application API only allows adding candidates in New status; it does not state that a parse error predicts hiring rejection."
+      ],
+      "sources": [
+        "https://developers.smartrecruiters.com/reference/candidatesresumeparse",
+        "https://developers.smartrecruiters.com/docs/post-an-application",
+        "https://developers.smartrecruiters.com/reference/candidatesresumeaddtojob-1"
+      ],
+      "implication": "Design implication (inference): Include hard checks for a 2 MB attachment budget, text-bearing parseability, required contact data, and screening-answer limits. Model structured extraction fields explicitly, but do not conflate API validation errors with employer selection decisions."
+    },
+    {
+      "system": "Oracle Taleo Enterprise",
+      "facts": [
+        "Vendor fact: Taleo candidate-search keyword fields can include pasted resumes, pasted cover letters, and supported file attachments.",
+        "Vendor fact: Documented searchable attachment formats include DOC/DOCX, TXT, RTF, PDF, HTML/HTM, WPD, and ODT when supported by the deployment.",
+        "Vendor fact: Conceptual Search searches the last three supported attachments per candidate; optimal keyword search can search all supported attachments, while legacy keyword search is limited to the three most recent.",
+        "Vendor fact: Resume parsing accepts DOC/DOCX, WPD, TXT, RTF, HTML/HTM, PDF, XLS/XLSX, and ODT, with a documented 100 KB limit for the parsing workflow.",
+        "Vendor fact: Taleo candidate records contain structured personal information, work experience, certifications, references, screening information, and requisition-specific submission data.",
+        "Vendor fact: Oracle states that Conceptual Search is intended to discover candidates and is not a tool to exclude candidates; candidate ranking is by relevance, while exact/related-term searches may have different result behavior."
+      ],
+      "sources": [
+        "https://docs.oracle.com/en/cloud/saas/taleo-enterprise/21b/otrec/candidate-management.html",
+        "https://docs.oracle.com/en/cloud/saas/taleo-enterprise/otrcg/c-attachment.html"
+      ],
+      "implication": "Design implication (inference): Check both parser-size risk and search-visibility risk. Warn that a resume may be uploaded yet omitted from a particular search because of attachment recency or deployment settings. Do not describe conceptual relevance ranking as an automatic rejection screen."
+    }
+  ],
+  "caveats": [
+    "ATS products are configurable by employer, deployment, region, subscription, parser version, and integration path; vendor documentation often describes capabilities rather than one universal applicant experience.",
+    "Supported upload formats are not equivalent to successful parsing. Image-only PDFs, scans, complex layouts, tables, columns, headers/footers, and decorative elements can produce incomplete structured data.",
+    "Vendor documentation generally documents parsing, search, workflow status, and screening mechanics—not a deterministic candidate-rejection algorithm or a hiring-outcome score.",
+    "A local linter should report compatibility risks and extracted-text/field coverage, not claim that a CV score predicts interview, rejection, or hiring outcomes.",
+    "Workday and iCIMS public materials reviewed did not provide a complete universal parser format matrix; those checks should remain configurable or explicitly marked unknown.",
+    "Taleo's documented limits and search behavior may differ between Enterprise editions, legacy/optimal search modes, and customer configuration.",
+    "The safest architecture is layered: file/container validation, text extraction and OCR detection, layout-risk analysis, structured-field coverage, search-term visibility checks, and employer-specific screening/application checks."
+  ]
+}
