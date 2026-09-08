@@ -1,6 +1,6 @@
 # CV Linter: Agent Skill Architecture
 
-**Date:** 6 September 2026
+**Date:** 8 September 2026
 **Status:** Proposed contracts and package design; no executable, skill installation, MCP server or application code is implemented by this document. Examples are specifications, not working commands.
 **Related:** [Product and architecture plan](architecture-and-product-plan.md) · [Agent and PWA UX](ui-design.md)
 
@@ -10,6 +10,8 @@
 
 This design revises the [distribution memo](research/agent-skill-distribution-research.json), whose recommendations are research inputs rather than requirements. The [claims policy](architecture-and-product-plan.md#1-product-decision-and-claims-policy) applies: platform/vendor facts need scoped sources, interoperability needs testing, and model advice is not a deterministic fact. The [ATS memo](research/ats-vendor-research.json) and [judge memo](research/llm-judge-research.json) remain unchanged.
 
+The [vendor evidence and testing plan](research/vendor-evidence-and-testing-plan.md) separates official vendor facts, authorized vendor observations, and local parser checks. Teamtailor, Greenhouse, Lever, and Workable are the initial research priorities; profiles stay documentation-based until scoped, authorized measurements exist. Candidate-facing best-practice blogs supply hypotheses, not vendor authority.
+
 Required invariants:
 
 1. `lint`, `compare-to-job`, and `report` are deterministic, local operations with no network requests or model initialization/download. Reject `judge_enabled` and `lint --judge`; a normal check cannot invoke inference.
@@ -18,6 +20,7 @@ Required invariants:
 4. Only explicitly selected files/bytes and output destinations are accessible to the engine; host permissions do not authorize directory discovery.
 5. Local execution describes the engine's location. Agent chat/tool results follow the host's policies; disclose this briefly in setup/help and return useful, compact findings without a per-result projection gate.
 6. Results retain versions and evidence provenance. Judge runs keep a basic controller-owned record of the confirmed request and outcome. Cryptographic consent receipts, hash-chained audits and durable encrypted history are deferred, not MVP dependencies.
+7. Selecting a vendor profile never triggers an upload or grants vendor access. Any future vendor research harness operates outside product commands, with separate testing/publication permissions; vendor access is not a local MVP dependency.
 
 ## 2. Package tree and release contract
 
@@ -53,7 +56,7 @@ release/
 │   │   ├── run-record.schema.json
 │   │   └── report-bundle.schema.json
 │   ├── rules/                      # declarative definitions, no executable plugins
-│   ├── profiles/                   # generic + seven vendor scopes with citations
+│   ├── profiles/                   # generic + reviewed vendor scopes with claim metadata
 │   ├── prompts/                    # versioned bounded judge templates
 │   ├── rubrics/                    # task criteria and abstention policies
 │   ├── references/
@@ -143,6 +146,8 @@ The third command prepares the request, displays “Selected CV content will be 
 Requests declare `contract_version`, `operation`, `request_id`, an operation-specific input reference (exactly one path/bytes/handle alternative where applicable), component selections, locale, limits and output policy. The controller resolves versions and checks permissions. Model runtimes and provider endpoints come from configured registry entries, not document/model-supplied URLs or executables.
 
 Results include `schema_version`, `operation`, `status`, immutable `analysis` and a separate `execution` envelope. Analysis records input hashes, parser/normalizer/rules/profile/rubric versions, capabilities, `pass|partial|fail|unknown|not_applicable` checks, evidence IDs, severity, observation certainty, citations and unassessed scope. Execution records run ID, runtime/location, duration, cancellation and errors. Canonical hashing excludes volatile execution fields and sorts stable rule/span IDs. Normal agent output is a compact findings summary with necessary evidence links/excerpts; complete evidence remains available in the local report.
+
+Each rule's linked claims resolve `claim_kind`, `scope`, `source_url`, `verification_status`, `testing_permission`, `last_verified_at`, `benchmark_status`, and `evidence_level` under the [vendor metadata contract](research/vendor-evidence-and-testing-plan.md#4-architecture-and-rule-metadata). Separate a local observation from its documented vendor premise and inferred consequence. Reports preserve source-review status and local/vendor benchmark coverage independently; a local pass cannot create a vendor-tested label. Distributed profiles contain reviewed public evidence and permission-status references, without credentials or private agreements. No live vendor-source fetch or experiment occurs during analysis.
 
 No aggregate is issued for empty/unreadable input or zero applicable weight. A failed parser or disabled applicable check is `unknown`; absent format capability can make a layout check `not_applicable`. Preserve the product plan's provisional scoring/coverage policy; judge records have no compatibility-score contribution.
 

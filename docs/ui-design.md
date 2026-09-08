@@ -1,6 +1,6 @@
 # CV Linter: Agent and PWA UX Design
 
-**Date:** 6 September 2026
+**Date:** 8 September 2026
 **Status:** Proposed interaction specification; no UI implementation, usability results or model-quality claims.
 **Related:** [Product plan and claims policy](architecture-and-product-plan.md) · [Commands, evidence, confirmation and schemas](agent-skill-architecture.md)
 
@@ -16,12 +16,13 @@ Use the product plan's [claims policy](architecture-and-product-plan.md#1-produc
 |---|---|
 | Deterministic observation | Rule name/ID, observed property, source evidence, severity, certainty and check scope |
 | Vendor fact | Named vendor, exact documented workflow/edition, primary source and source-review status |
-| Design inference | Label “Possible consequence” or “Documentation-based guidance”; distinguish observed layout from untested downstream effect |
+| Authorized vendor observation | “Observed in an authorized vendor test,” with the tested workflow, date and fixture scope; only display publishable reviewed results, without implying vendor endorsement |
+| Design inference | Label “Possible consequence” or “Design inference”; distinguish observed layout from untested downstream effect |
 | Advisory model judgment | Persistent “LLM advisory” label, criterion, evidence, model/location, uncertainty and Run details link |
 | Unvalidated assumption | Mark the feature/profile/model “Experimental” or the quantity “Proposed target”; never present it as measured |
 | Unknown/unassessed | Explain missing input, capability or context; do not render a pass indicator |
 
-The [ATS research](research/ats-vendor-research.json), [distribution research](research/agent-skill-distribution-research.json) and [judge research](research/llm-judge-research.json) supply the research basis. The layouts and interaction choices here are design proposals to test. All examples below are illustrative, with no empirical scores or pass rates.
+The [ATS research](research/ats-vendor-research.json), [vendor evidence and testing plan](research/vendor-evidence-and-testing-plan.md), [distribution research](research/agent-skill-distribution-research.json) and [judge research](research/llm-judge-research.json) supply the research basis. Candidate-facing best-practice blogs supply hypotheses, not authority for compatibility requirements. The layouts and interaction choices here are design proposals to test. All examples below are illustrative, with no empirical scores or pass rates.
 
 Judge support is visible from the first release. **Check CV** always means deterministic lint; **Request advisory review** is a separate first-class action. “Supported,” “model installed,” “validated for this task,” “requested,” and “completed” are different states. Do not label judging globally disabled merely because the user has not requested it. No action called Check, Compare to job, Refresh report or Export may silently invoke a model.
 
@@ -140,7 +141,11 @@ For judge evidence, show **Sent to judge** beside the selected original view. Ma
 
 Default profile is Generic. Selecting a vendor shows documentation scope/status; selecting an exact API/edition or adding employer requirements is a separate contextual choice. No vendor-logo “certified” treatment. The profile drawer distinguishes upload, parsing, structured fields, search and employer screening.
 
+Keep **Documented vendor guidance**, **Observed by CV Linter**, and any future **Observed in an authorized vendor test** distinct. Show claim scope, source verification/date, evidence origin, and local/vendor benchmark coverage in details; vendor findings must be permitted for publication. A sandbox or API access badge cannot stand in for a tested claim. Selecting Teamtailor, Greenhouse, Lever, or Workable never uploads the user's CV or requires vendor credentials. All profiles are documentation-based at this planning stage.
+
 Examples of correct profile copy: Greenhouse upload and parse budgets differ; SmartRecruiters' 2 MB rule belongs to the documented application API; Taleo's 100 KB parsing guidance needs historical edition/workflow confirmation. Workday and iCIMS do not acquire universal format/score rules from choosing their names. Ashby general image/file uploads do not establish resume image parsing; Lever resume-only search differs from broader profile search. Link the [vendor fact table and source-status notes](architecture-and-product-plan.md#3-ats-evidence-and-vendor-specific-implications) rather than implying these behaviors were tested by CV Linter.
+
+For Teamtailor, distinguish local hidden-text observations from its documented Co-pilot warnings; avoid implying intent or an automatic score penalty. For Workable, “CV Linter could not extract native text” must not become “Workable cannot parse this CV,” given its documented image-based parsing. Preserve pending-source labels on inherited Lever help-page claims.
 
 Job comparison accepts an explicitly supplied local file or pasted JD, with no automatic URL retrieval. Display the requirement inventory for required/preferred/alternative/negated wording review. Show a matrix of requirement excerpt, CV evidence, deterministic match method, assessment scope and uncertainty. “Not evidenced” means only that this assessed CV lacks located support. Semantic interpretation is a distinct Request advisory review action over selected criteria, with exact requirement spans included.
 
