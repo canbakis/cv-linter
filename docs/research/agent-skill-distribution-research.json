@@ -73,7 +73,7 @@
   "privacy_notes": [
     "Parsing and deterministic linting are local. Explicitly extracted CV text handed to a configured AI host enters that host's context and follows the host/model's policies.",
     "The complete workflow is local only when the selected semantic model is local and verified not to forward data.",
-    "Read one user-selected file or supplied bytes; do not scan directories, fetch URLs, or follow embedded resources.",
+    "Read one user-selected PDF, DOCX, or Markdown file (with bytes only as an internal/test/debug seam); do not scan directories, fetch URLs, or follow embedded resources.",
     "Keep raw CV bytes/text in process memory or explicit user-directed streams only. MVP has no raw-CV store, database, accounts, cloud sync, telemetry, or automatic history.",
     "Do not claim that local stdio, an Agent Skill, or a local parser makes provider copies or host transcripts local."
   ],

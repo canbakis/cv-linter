@@ -1,9 +1,10 @@
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 mod mcp;
 
-use cv_linter::{extract_plain_text, lint_plain_text, read_selected_file};
+use cv_linter::{Severity, extract_plain_text, lint_plain_text, read_selected_file};
 use rmcp::{ServiceExt, transport::stdio};
 use serde::Serialize;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -25,6 +26,9 @@ enum Command {
         /// Serve MCP over standard input and output.
         #[arg(long)]
         stdio: bool,
+        /// Directory containing files this MCP process may read. Repeat for additional roots.
+        #[arg(long, value_name = "DIR")]
+        allow_root: Vec<PathBuf>,
     },
 }
 
@@ -33,20 +37,13 @@ struct InputArgs {
     /// Path to one explicitly selected UTF-8 text file.
     #[arg(long)]
     input: PathBuf,
-    /// Output format. JSON is the only MVP format.
-    #[arg(long, value_enum, default_value_t = OutputFormat::Json)]
-    format: OutputFormat,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum OutputFormat {
-    Json,
 }
 
 #[tokio::main]
 async fn main() -> ExitCode {
     match run(Cli::parse()).await {
-        Ok(()) => ExitCode::SUCCESS,
+        Ok(exit_code) => exit_code,
+        Err(error) if is_broken_pipe(error.as_ref()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("cv-linter: {error}");
             ExitCode::from(3)
@@ -54,28 +51,50 @@ async fn main() -> ExitCode {
     }
 }
 
-async fn run(cli: Cli) -> Result<(), Box<dyn std::error::Error>> {
+async fn run(cli: Cli) -> Result<ExitCode, Box<dyn std::error::Error>> {
     match cli.command {
         Command::Lint(args) => {
             let input = read_selected_file(&args.input)?;
-            write_json(&lint_plain_text(&input)?)?;
+            let report = lint_plain_text(&input)?;
+            let has_errors = report
+                .findings
+                .iter()
+                .any(|finding| finding.severity == Severity::Error);
+            write_json(&report)?;
+            Ok(if has_errors {
+                ExitCode::from(1)
+            } else {
+                ExitCode::SUCCESS
+            })
         }
         Command::ExtractText(args) => {
             let input = read_selected_file(&args.input)?;
             write_json(&extract_plain_text(&input)?)?;
+            Ok(ExitCode::SUCCESS)
         }
-        Command::Mcp { stdio: true } => {
-            let service = mcp::CvLinterMcp.serve(stdio()).await?;
+        Command::Mcp {
+            stdio: true,
+            allow_root,
+        } => {
+            let service = mcp::CvLinterMcp::new(allow_root)?.serve(stdio()).await?;
             service.waiting().await?;
+            Ok(ExitCode::SUCCESS)
         }
-        Command::Mcp { stdio: false } => {
-            return Err("the MVP MCP server requires --stdio".into());
-        }
+        Command::Mcp { stdio: false, .. } => Err("the MVP MCP server requires --stdio".into()),
     }
+}
+
+fn write_json(value: &impl Serialize) -> Result<(), Box<dyn std::error::Error>> {
+    let encoded = serde_json::to_vec_pretty(value)?;
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    stdout.write_all(&encoded)?;
+    stdout.write_all(b"\n")?;
     Ok(())
 }
 
-fn write_json(value: &impl Serialize) -> Result<(), serde_json::Error> {
-    println!("{}", serde_json::to_string_pretty(value)?);
-    Ok(())
+fn is_broken_pipe(error: &(dyn std::error::Error + 'static)) -> bool {
+    error
+        .downcast_ref::<io::Error>()
+        .is_some_and(|error| error.kind() == io::ErrorKind::BrokenPipe)
 }

@@ -1,8 +1,22 @@
 {
-  "title": "ATS compatibility research memo and parser-spike inputs",
+  "title": "ATS compatibility research memo and historical parser-spike notes",
   "status": "Background research only. MVP has no vendor profiles, ATS integration, vendor uploads, or Teamtailor-compatible claim.",
   "mvp_boundary": "Use this memo to preserve problem and market hypotheses. Official vendor documentation, local parser observations, and authorized vendor measurements remain separate evidence types.",
   "parser_research": {
+    "selected_mvp_parser": {
+      "status": "Product decision; implementation and fixture validation pending",
+      "library": "Xberg (formerly Kreuzberg)",
+      "version": "1.1.5 as of 2026-09-10; use Cargo version = \"=1.1.5\" when implemented",
+      "adapter": "Use behind a narrow project-owned DocumentExtractor adapter; do not expose Xberg types at CLI/MCP boundaries.",
+      "default_features": false,
+      "features": ["tokio-runtime", "pdf", "office"],
+      "notes": "MIT license; declared Rust 1.92 MSRV; pure-Rust PDF backend in the v1 line; recent rename/API churn requires compilation and fixture validation. The committed 0.1.0 code does not yet contain this integration.",
+      "sources": [
+        "https://github.com/xberg-io/xberg",
+        "https://github.com/xberg-io/xberg/blob/main/CHANGELOG.md",
+        "https://crates.io/crates/xberg/1.1.5"
+      ]
+    },
     "teamtailor_parsekit_bin": {
       "repository": "https://github.com/Teamtailor/parsekit-bin",
       "lineage": "Forked from scientist-labs/parsekit, not excoffierleonard/parser.",
@@ -16,7 +30,7 @@
       ]
     },
     "extraction_bakeoff": {
-      "status": "planned time-boxed spike",
+      "status": "Historical research note; superseded as the MVP parser selection",
       "candidates": [
         "https://github.com/excoffierleonard/parser",
         "https://github.com/scientist-labs/parsekit"
@@ -34,7 +48,7 @@
         "runtime/resource behavior",
         "library, dependency, and dictionary/data licensing"
       ],
-      "boundary": "A local extraction bake-off does not measure production ATS compatibility. Record versions, fixture IDs, results, limitations, and licensing decisions before choosing a parser."
+      "boundary": "A local extraction bake-off does not measure production ATS compatibility. These historical candidates are not the MVP dependency; retain their observations only as research context."
     }
   },
   "findings": [

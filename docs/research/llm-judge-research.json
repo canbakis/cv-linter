@@ -19,7 +19,7 @@
     "Abstain when extraction is incomplete, a block citation cannot be resolved, the requirement is ambiguous, or the proposed wording would require an unsupported fact."
   ],
   "keep_deterministic_in_rust": [
-    "PDF/DOCX/plain-text extraction and provenance",
+    "PDF/DOCX/Markdown extraction and provenance; plain UTF-8 only as an internal/test/debug seam",
     "headings, reading order, columns, tables, and structure observations",
     "Swedish/English spelling, formatting/structure, and literal checks",
     "dates and exact-term checks that are defined from document bytes",

@@ -8,12 +8,12 @@
 
 MVP interaction is terminal- and host-based:
 
-1. The user selects one CV file.
+1. The user selects one PDF, DOCX, or Markdown CV file (plain UTF-8 is only an internal/test/debug seam).
 2. `cv-linter lint` reports deterministic local findings.
 3. The user may explicitly request `extract-text` or `extract_cv_text` for a configured Codex/Claude workflow.
 4. The host performs semantic job-requirement evidence analysis or rewriting using cited extracted blocks.
 
-The host must keep deterministic findings separate from semantic advice. Advice is not a score, hiring decision, or automatic edit. Unsupported or uncertain claims are marked as not evidenced or abstained, and every substantive host-AI claim cites stable block IDs.
+The host must keep deterministic findings separate from semantic advice. Deterministic checks establish parseability/content facts; the host handles semantic job alignment and evidence-grounded rewriting. Advice is not a score, hiring decision, automatic edit, universal ATS score, or Teamtailor compatibility guarantee. Host output is structured with requirement verdicts, cited evidence IDs, confidence, reviewable rewrite diffs, supporting block IDs, and questions when facts are missing. Unsupported or uncertain claims are marked as not evidenced or abstained, citations and names/dates/numbers are validated, documents are treated as untrusted data, and users approve rewrites before applying them.
 
 ## 2. Privacy copy
 
@@ -29,7 +29,7 @@ React/browser UI and PWA/offline UI are deferred until observed user needs justi
 
 Tauri or other desktop packaging is deferred until there is evidence from paying customers. Do not add a desktop shell, local HTTP bridge, always-running backend, or hidden localhost service to make a UI appear available.
 
-Other deferred UX includes authentication, billing, cloud sync, Supabase CV storage, durable history, broad export, analytics, vendor profiles, ATS-compatible badges, scores, built-in judging, and automatic rewriting.
+Other deferred UX includes authentication, billing, cloud sync, Supabase CV storage, durable history, broad export, analytics, vendor profiles, ATS-compatible badges, scores, built-in judging, automatic rewriting, OCR, and ML/layout extensions.
 
 ## 4. Future UI research questions
 

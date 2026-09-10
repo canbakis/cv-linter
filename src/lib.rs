@@ -6,12 +6,16 @@ use std::io::{self, Read};
 use std::path::Path;
 
 pub const MAX_INPUT_BYTES: usize = 10 * 1024 * 1024;
+pub const MAX_TEXT_LINES: usize = 100_000;
+pub const MAX_FINDINGS: usize = 10_000;
 pub const SCHEMA_VERSION: &str = "0.1.0";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExtractError {
     InputTooLarge { actual: usize, limit: usize },
     InvalidUtf8 { valid_up_to: usize },
+    TooManyLines { limit: usize },
+    TooManyFindings { limit: usize },
 }
 
 impl fmt::Display for ExtractError {
@@ -24,6 +28,12 @@ impl fmt::Display for ExtractError {
                 formatter,
                 "input is not valid UTF-8 text (first invalid byte at offset {valid_up_to})"
             ),
+            Self::TooManyLines { limit } => {
+                write!(formatter, "input exceeds the {limit}-line text limit")
+            }
+            Self::TooManyFindings { limit } => {
+                write!(formatter, "lint exceeds the {limit}-finding limit")
+            }
         }
     }
 }
@@ -148,11 +158,21 @@ pub fn extract_plain_text(input: &[u8]) -> Result<ExtractedDocument, ExtractErro
         valid_up_to: error.valid_up_to(),
     })?;
 
-    let blocks = lines_with_offsets(text)
-        .filter(|line| !line.text.trim().is_empty())
-        .enumerate()
-        .map(|(index, line)| TextBlock {
-            id: format!("block-{:04}", index + 1),
+    let mut blocks = Vec::new();
+    for (line_index, raw_line) in lines_with_offsets(text).enumerate() {
+        if line_index == MAX_TEXT_LINES {
+            return Err(ExtractError::TooManyLines {
+                limit: MAX_TEXT_LINES,
+            });
+        }
+
+        let line = strip_initial_bom(raw_line);
+        if line.text.trim().is_empty() {
+            continue;
+        }
+
+        blocks.push(TextBlock {
+            id: format!("block-{:04}", blocks.len() + 1),
             kind: "line",
             text: line.text.to_owned(),
             source: SourceLocator {
@@ -161,8 +181,8 @@ pub fn extract_plain_text(input: &[u8]) -> Result<ExtractedDocument, ExtractErro
                 end_byte: line.end_byte,
             },
             provenance: "native_text",
-        })
-        .collect::<Vec<_>>();
+        });
+    }
 
     Ok(ExtractedDocument {
         schema_version: SCHEMA_VERSION,
@@ -183,36 +203,48 @@ pub fn lint_plain_text(input: &[u8]) -> Result<LintReport, ExtractError> {
     let mut findings = Vec::new();
 
     if document.status == DocumentStatus::NoReadableText {
-        findings.push(Finding {
-            rule_id: "text.empty",
-            severity: Severity::Error,
-            message: "The document contains no readable text.",
-            evidence: None,
-        });
+        add_finding(
+            &mut findings,
+            Finding {
+                rule_id: "text.empty",
+                severity: Severity::Error,
+                message: "The document contains no readable text.",
+                evidence: None,
+            },
+        )?;
     }
 
+    let mut blocks = document.blocks.iter().peekable();
     for line in lines_with_offsets(text) {
-        let block_id = document
-            .blocks
-            .iter()
-            .find(|block| block.source.line == line.number)
-            .map(|block| block.id.clone());
+        let block_id = if blocks
+            .peek()
+            .is_some_and(|block| block.source.line == line.number)
+        {
+            blocks.next().map(|block| block.id.clone())
+        } else {
+            None
+        };
 
-        if line.text.ends_with(' ') || line.text.ends_with('\t') {
-            findings.push(Finding {
-                rule_id: "text.trailing_whitespace",
-                severity: Severity::Info,
-                message: "The line has trailing whitespace.",
-                evidence: Some(FindingEvidence {
-                    block_id: block_id.clone(),
-                    line: Some(line.number),
-                    start_byte: Some(line.end_byte.saturating_sub(1)),
-                    end_byte: Some(line.end_byte),
-                }),
-            });
+        let without_trailing_whitespace = line.text.trim_end_matches(char::is_whitespace);
+        if without_trailing_whitespace.len() != line.text.len() {
+            add_finding(
+                &mut findings,
+                Finding {
+                    rule_id: "text.trailing_whitespace",
+                    severity: Severity::Info,
+                    message: "The line has trailing whitespace.",
+                    evidence: Some(FindingEvidence {
+                        block_id: block_id.clone(),
+                        line: Some(line.number),
+                        start_byte: Some(line.start_byte + without_trailing_whitespace.len()),
+                        end_byte: Some(line.end_byte),
+                    }),
+                },
+            )?;
         }
 
         for (relative_offset, character) in line.text.char_indices() {
+            let absolute_offset = line.start_byte + relative_offset;
             let rule = match character {
                 '\0' => Some((
                     "text.nul_character",
@@ -224,6 +256,26 @@ pub fn lint_plain_text(input: &[u8]) -> Result<LintReport, ExtractError> {
                     Severity::Info,
                     "The line contains a tab character.",
                 )),
+                '\u{feff}' if absolute_offset == 0 => Some((
+                    "text.utf8_bom",
+                    Severity::Info,
+                    "The document starts with a UTF-8 byte-order mark.",
+                )),
+                character if is_bidirectional_control(character) => Some((
+                    "text.bidirectional_control",
+                    Severity::Warning,
+                    "The line contains a bidirectional control character; verify it is intentional.",
+                )),
+                character
+                    if unicode_general_category::get_general_category(character)
+                        == unicode_general_category::GeneralCategory::Format =>
+                {
+                    Some((
+                        "text.format_character",
+                        Severity::Warning,
+                        "The line contains an invisible format character; verify it is intentional.",
+                    ))
+                }
                 character if character.is_control() => Some((
                     "text.control_character",
                     Severity::Warning,
@@ -233,18 +285,20 @@ pub fn lint_plain_text(input: &[u8]) -> Result<LintReport, ExtractError> {
             };
 
             if let Some((rule_id, severity, message)) = rule {
-                let start_byte = line.start_byte + relative_offset;
-                findings.push(Finding {
-                    rule_id,
-                    severity,
-                    message,
-                    evidence: Some(FindingEvidence {
-                        block_id: block_id.clone(),
-                        line: Some(line.number),
-                        start_byte: Some(start_byte),
-                        end_byte: Some(start_byte + character.len_utf8()),
-                    }),
-                });
+                add_finding(
+                    &mut findings,
+                    Finding {
+                        rule_id,
+                        severity,
+                        message,
+                        evidence: Some(FindingEvidence {
+                            block_id: block_id.clone(),
+                            line: Some(line.number),
+                            start_byte: Some(absolute_offset),
+                            end_byte: Some(absolute_offset + character.len_utf8()),
+                        }),
+                    },
+                )?;
             }
         }
     }
@@ -257,6 +311,27 @@ pub fn lint_plain_text(input: &[u8]) -> Result<LintReport, ExtractError> {
         block_count: document.blocks.len(),
         findings,
     })
+}
+
+fn add_finding(findings: &mut Vec<Finding>, finding: Finding) -> Result<(), ExtractError> {
+    if findings.len() == MAX_FINDINGS {
+        return Err(ExtractError::TooManyFindings {
+            limit: MAX_FINDINGS,
+        });
+    }
+    findings.push(finding);
+    Ok(())
+}
+
+fn is_bidirectional_control(character: char) -> bool {
+    matches!(
+        character,
+        '\u{061c}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{202a}'..='\u{202e}'
+            | '\u{2066}'..='\u{2069}'
+    )
 }
 
 fn validate_size(input: &[u8]) -> Result<(), ExtractError> {
@@ -296,24 +371,64 @@ struct Line<'a> {
     text: &'a str,
 }
 
-fn lines_with_offsets(text: &str) -> impl Iterator<Item = Line<'_>> {
-    let mut start_byte = 0;
-    text.split_inclusive('\n')
-        .enumerate()
-        .map(move |(index, raw)| {
-            let without_newline = raw.strip_suffix('\n').unwrap_or(raw);
-            let line = without_newline
-                .strip_suffix('\r')
-                .unwrap_or(without_newline);
-            let result = Line {
-                number: index + 1,
-                start_byte,
-                end_byte: start_byte + line.len(),
-                text: line,
-            };
-            start_byte += raw.len();
-            result
-        })
+fn strip_initial_bom<'a>(mut line: Line<'a>) -> Line<'a> {
+    if line.number == 1 && line.text.starts_with('\u{feff}') {
+        line.start_byte += '\u{feff}'.len_utf8();
+        line.text = &line.text['\u{feff}'.len_utf8()..];
+    }
+    line
+}
+
+fn lines_with_offsets(text: &str) -> LinesWithOffsets<'_> {
+    LinesWithOffsets {
+        text,
+        next_start: 0,
+        next_line_number: 1,
+    }
+}
+
+struct LinesWithOffsets<'a> {
+    text: &'a str,
+    next_start: usize,
+    next_line_number: usize,
+}
+
+impl<'a> Iterator for LinesWithOffsets<'a> {
+    type Item = Line<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.next_start >= self.text.len() {
+            return None;
+        }
+
+        let start_byte = self.next_start;
+        let remaining = &self.text.as_bytes()[start_byte..];
+        let content_length = remaining
+            .iter()
+            .position(|byte| matches!(*byte, b'\r' | b'\n'))
+            .unwrap_or(remaining.len());
+        let end_byte = start_byte + content_length;
+
+        self.next_start = end_byte;
+        if self.next_start < self.text.len() {
+            if self.text.as_bytes()[self.next_start] == b'\r'
+                && self.text.as_bytes().get(self.next_start + 1) == Some(&b'\n')
+            {
+                self.next_start += 2;
+            } else {
+                self.next_start += 1;
+            }
+        }
+
+        let line = Line {
+            number: self.next_line_number,
+            start_byte,
+            end_byte,
+            text: &self.text[start_byte..end_byte],
+        };
+        self.next_line_number += 1;
+        Some(line)
+    }
 }
 
 #[cfg(test)]
@@ -337,6 +452,97 @@ mod tests {
         assert_eq!(
             &input[first.blocks[1].source.start_byte..first.blocks[1].source.end_byte],
             first.blocks[1].text.as_bytes()
+        );
+    }
+
+    #[test]
+    fn cr_only_line_endings_preserve_blocks_and_offsets() {
+        let input = b"Name\rRole\rSkills";
+        let document = extract_plain_text(input).unwrap();
+
+        assert_eq!(document.blocks.len(), 3);
+        assert_eq!(document.blocks[1].text, "Role");
+        assert_eq!(document.blocks[1].source.line, 2);
+        assert_eq!(document.blocks[1].source.start_byte, 5);
+        assert_eq!(document.blocks[1].source.end_byte, 9);
+        assert_eq!(
+            &input[document.blocks[1].source.start_byte..document.blocks[1].source.end_byte],
+            b"Role"
+        );
+    }
+
+    #[test]
+    fn initial_bom_is_removed_from_text_and_reported() {
+        let input = b"\xef\xbb\xbfName\n";
+        let document = extract_plain_text(input).unwrap();
+        let report = lint_plain_text(input).unwrap();
+
+        assert_eq!(document.blocks[0].text, "Name");
+        assert_eq!(document.blocks[0].source.start_byte, 3);
+        let finding = report
+            .findings
+            .iter()
+            .find(|finding| finding.rule_id == "text.utf8_bom")
+            .unwrap();
+        let evidence = finding.evidence.as_ref().unwrap();
+        assert_eq!(evidence.start_byte, Some(0));
+        assert_eq!(evidence.end_byte, Some(3));
+    }
+
+    #[test]
+    fn unicode_format_and_bidirectional_controls_are_reported() {
+        let report = lint_plain_text("Rust\u{200b}\u{202e}\n".as_bytes()).unwrap();
+        let rule_ids = report
+            .findings
+            .iter()
+            .map(|finding| finding.rule_id)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            rule_ids,
+            vec!["text.format_character", "text.bidirectional_control"]
+        );
+    }
+
+    #[test]
+    fn trailing_whitespace_evidence_covers_the_complete_run() {
+        let report = lint_plain_text(b"Role \t \n").unwrap();
+        let finding = report
+            .findings
+            .iter()
+            .find(|finding| finding.rule_id == "text.trailing_whitespace")
+            .unwrap();
+        let evidence = finding.evidence.as_ref().unwrap();
+
+        assert_eq!(evidence.start_byte, Some(4));
+        assert_eq!(evidence.end_byte, Some(7));
+    }
+
+    #[test]
+    fn lint_handles_many_lines_in_one_pass() {
+        let input = "entry\n".repeat(MAX_TEXT_LINES);
+        let report = lint_plain_text(input.as_bytes()).unwrap();
+
+        assert_eq!(report.block_count, MAX_TEXT_LINES);
+        assert!(report.findings.is_empty());
+    }
+
+    #[test]
+    fn excessive_line_and_finding_counts_are_rejected() {
+        let too_many_lines = "entry\n".repeat(MAX_TEXT_LINES + 1);
+        assert_eq!(
+            extract_plain_text(too_many_lines.as_bytes()).unwrap_err(),
+            ExtractError::TooManyLines {
+                limit: MAX_TEXT_LINES
+            }
+        );
+
+        let too_many_findings = "\t".repeat(MAX_FINDINGS + 1);
+        assert_eq!(
+            lint_plain_text(too_many_findings.as_bytes()).unwrap_err(),
+            ExtractError::TooManyFindings {
+                limit: MAX_FINDINGS
+            }
         );
     }
 
