@@ -1,5 +1,42 @@
 {
-  "title": "ATS compatibility research memo for a local-first CV linter",
+  "title": "ATS compatibility research memo and parser-spike inputs",
+  "status": "Background research only. MVP has no vendor profiles, ATS integration, vendor uploads, or Teamtailor-compatible claim.",
+  "mvp_boundary": "Use this memo to preserve problem and market hypotheses. Official vendor documentation, local parser observations, and authorized vendor measurements remain separate evidence types.",
+  "parser_research": {
+    "teamtailor_parsekit_bin": {
+      "repository": "https://github.com/Teamtailor/parsekit-bin",
+      "lineage": "Forked from scientist-labs/parsekit, not excoffierleonard/parser.",
+      "interpretation": "The Teamtailor-only diff appears to be packaging, build, and release changes rather than ATS-specific parser or scoring logic. This is evidence of a published Teamtailor build, not evidence of production ATS compatibility.",
+      "packaging": "parsekit-bin is a Ruby gem with a Rust extension.",
+      "licensing": "Its MuPDF dependency raises AGPL/commercial licensing questions; review the gem, Rust dependencies, MuPDF, and any bundled data separately before adoption or redistribution.",
+      "sources": [
+        "https://github.com/Teamtailor/parsekit-bin",
+        "https://github.com/scientist-labs/parsekit",
+        "https://github.com/excoffierleonard/parser"
+      ]
+    },
+    "extraction_bakeoff": {
+      "status": "planned time-boxed spike",
+      "candidates": [
+        "https://github.com/excoffierleonard/parser",
+        "https://github.com/scientist-labs/parsekit"
+      ],
+      "fixtures": "Representative Swedish CV fixtures with controlled single/multi-column layouts, headings, Unicode, tables, lists, and structure-preservation cases.",
+      "evaluate": [
+        "reading order",
+        "columns",
+        "headings",
+        "Unicode and Swedish characters",
+        "tables",
+        "useful source-structure preservation",
+        "dependencies",
+        "binary size",
+        "runtime/resource behavior",
+        "library, dependency, and dictionary/data licensing"
+      ],
+      "boundary": "A local extraction bake-off does not measure production ATS compatibility. Record versions, fixture IDs, results, limitations, and licensing decisions before choosing a parser."
+    }
+  },
   "findings": [
     {
       "system": "Greenhouse",

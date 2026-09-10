@@ -1,15 +1,15 @@
 # CV Linter: Vendor Evidence and Authorized Testing Plan
 
-**Date:** 8 September 2026
-**Status:** Documentation research and proposed architecture; no vendor account access, fixture submissions, benchmarks, or outreach performed.
+**Date:** 10 September 2026
+**Status:** Documentation research and proposed future testing; no vendor account access, fixture submissions, benchmarks, or outreach performed.
 **Main plan:** [Product and architecture](../architecture-and-product-plan.md)
-**Inherited research:** [ATS vendor memo](ats-vendor-research.json), preserved unchanged.
+**Inherited research:** [ATS vendor memo](ats-vendor-research.json), retained as background input.
 
 ## 1. Recommendation and evidence hierarchy
 
-**Adopt the proposal as a separate research document and make its evidence rules part of the main architecture.** Start the next research pass with **Teamtailor, Greenhouse, Lever, and Workable**. Keep the other inherited profiles as background research; their inclusion is not a promise of tested support. All vendor profiles remain **documentation-based guidance** until authorized experiments produce reviewed evidence for a particular workflow.
+**Keep this as a separate research document and make its evidence rules part of the main architecture.** Start the next research pass with **Teamtailor, Greenhouse, Lever, and Workable**. Keep the other inherited profiles as background research; their inclusion is not a promise of tested support. The MVP ships no vendor profiles, ATS integration, vendor uploads, or Teamtailor-compatible claim. Any future profile remains **documentation-based guidance** until authorized experiments produce reviewed evidence for a particular workflow.
 
-This changes claim provenance, profile governance, evaluation, and report wording. It does not require a different executable/PWA architecture, a vendor account for normal linting, or an MVP network integration with an ATS. Access research can proceed alongside local parser research. A sandbox invitation alone does not validate a profile.
+This changes claim provenance, profile governance, evaluation, and report wording. It does not require a vendor account for normal linting or an MVP network integration with an ATS. Access research can proceed alongside local parser research. A sandbox invitation alone does not validate a profile.
 
 The following is a **design decision**, not a ranking of vendors:
 
@@ -25,7 +25,13 @@ This is a hierarchy of **authority for a particular claim**, not one numerical c
 
 For example, a blog's warning about columns can motivate a paired fixture. Our parser losing a field proves a local defect on that fixture. A vendor support page can independently document a layout risk. Only an authorized vendor experiment establishes the vendor's observed result on that fixture. The consequence linking those records remains an explicitly labeled inference.
 
-## 2. Research snapshot and source status
+## 2. Parser research separate from ATS testing
+
+The [Teamtailor/parsekit-bin](https://github.com/Teamtailor/parsekit-bin) repository is evidence of a published Teamtailor build, not production ATS compatibility. It is forked from [scientist-labs/parsekit](https://github.com/scientist-labs/parsekit), not [excoffierleonard/parser](https://github.com/excoffierleonard/parser). Its Teamtailor-specific diff appears to concern packaging, build, and release changes rather than ATS-specific parser or scoring logic. `parsekit-bin` is a Ruby gem with a Rust extension, and its MuPDF dependency raises AGPL/commercial licensing questions.
+
+Record a **time-boxed extraction bake-off** between excoffierleonard/parser and upstream ParseKit before selecting a parser. Use representative Swedish CV fixtures covering reading order, single/multi-column layouts, headings, Unicode, tables, lists, and useful source-structure preservation. Evaluate reading order, columns, headings, Unicode, tables, source-structure retention, dependencies, binary size, runtime/resource behavior, and library/dependency/data licensing. This is a local extraction study only; it must not be described as an ATS compatibility test. Keep versions, fixture IDs, results, limitations, and license decisions with the spike record.
+
+## 3. Research snapshot and source status
 
 **Research observation:** The review on 2026-09-08 used public official support, API, partner, and selected terms pages. It did not enumerate private endpoints, inspect an employer tenant, or review a negotiated customer/partner agreement. “Not located” below means not located in this review, not proof that a service does not exist. Public API documentation and public job listings are not anonymous resume-parser services.
 
@@ -93,7 +99,7 @@ For example, a blog's warning about columns can motivate a paired fixture. Our p
 
 **Research gap:** No public anonymous parser endpoint was located. Trial API entitlement, parser equivalence between UI and API, synthetic batch automation, and permission to publish this study remain unconfirmed. A trial guide permitting a fake candidate does not establish permission for an automated benchmark.
 
-## 3. Access and permission register
+## 4. Access and permission register
 
 **Current CV Linter state:** No access acquired or outreach sent; vendor benchmarks are `not_run` for all four vendors. These are documentation findings about possible access routes, not credentials or grants held by us.
 
@@ -117,13 +123,13 @@ Each row inherits the access citations in its vendor section. No one should inte
 
 Teamtailor's applicable research/partner terms were not established; request them. Record the actual agreement, authorized grantor, tenant, features, fixture types, allowed actions, validity dates, limits, publication scope, and any exceptions before using a vendor environment. Public terms are research inputs; a negotiated agreement may differ. Unknown does not mean prohibited, and it does not authorize execution. Preserve testing and publication as independent decisions: a private permitted test may still be unpublishable.
 
-## 4. Architecture and rule metadata
+## 5. Architecture and rule metadata
 
 **Design decision:** Keep three independent records joined by stable IDs:
 
 1. A versioned **source/claim registry** for official facts, research hypotheses, and design inferences. Capture source title, section, URL, source type, scope, review status/date, and conflicting or superseded claims.
 2. A **permission register and vendor experiment archive** for actual access grants, dated methods, fixture hashes, raw observable results, and publication status. Keep credentials and non-public agreements outside distributed rule packs.
-3. A **local benchmark and report store** for CV Linter's own parser/rule versions, inputs, observations, gold annotations, and measurements. Reusing fixture IDs enables comparison; it does not turn local results into vendor results.
+3. **Local benchmark records** for CV Linter's own parser/rule versions, inputs, observations, gold annotations, and measurements. These are research artifacts, not an MVP persistence feature. Reusing fixture IDs enables comparison; it does not turn local results into vendor results.
 
 Future rules must resolve the following metadata per claim, even if normalized into referenced records instead of duplicated in each rule:
 
@@ -142,11 +148,11 @@ Retain rule ID/version, applicability, severity basis, abstention, unit semantic
 
 **Illustrative metadata, not a benchmark result:** The Teamtailor Co-pilot hidden-instruction documentation is a `vendor_fact`, scoped to Co-pilot/settings; its source is the parser support page, `verification_status = verified_documentation`, `last_verified_at = 2026-09-08`, and `evidence_level = official_documentation`. Its study permissions are unknown, vendor benchmark is `not_run`, and a future local invisible-text detector would have its own rule and evidence. Do not mark the documented detection mechanism empirically verified.
 
-The offline executable and PWA consume pinned, reviewed rule/profile data. Neither selects credentials, fetches live vendor sources, nor uploads CVs when a vendor profile is chosen. A later research-only harness may perform approved vendor operations, outside `lint`, `compare-to-job`, `judge`, and `report`; it is not a required MVP component. Import reviewed findings through a new profile version, with explicit report provenance. The judge cannot change these records or grant testing permission.
+The MVP executable has no vendor-profile surface and never selects credentials, fetches live vendor sources, or uploads a CV because of vendor research. A later research-only harness may perform approved vendor operations outside `lint`, `extract-text`, and the two stdio MCP tools; it is not a required MVP component. Import reviewed findings only through a separately approved future profile version, with explicit research provenance. Host-AI output cannot change these records or grant testing permission.
 
 Reports should distinguish **Documented vendor guidance**, **Observed by CV Linter**, and, only when supported, **Observed in an authorized vendor test**, with tested scope available. Source review status, benchmark coverage, and observational confidence remain separate. A profile with one evaluated claim keeps its other claims documentation-based. No “ATS certified” badge, universal score, or implied vendor endorsement follows from a sandbox test or permission to publish.
 
-## 5. Vendor research workflow and benchmark design
+## 6. Vendor research workflow and benchmark design
 
 1. **Build the official source inventory.** For each priority vendor, collect parser/field, file-format/size, search, screening, API, partner/trial/sandbox, and applicable terms sources. Record date, feature/workflow scope, fact versus inference, and retrieval failures. Recheck unresolved Lever articles; ask vendors for missing parser contracts rather than filling gaps with career advice.
 2. **Resolve access and permissions separately.** Confirm the real route (public parser, authenticated API, customer tenant, trial, partner sandbox, or dedicated test tenant), features, inspectable output, and eligibility. Obtain documented authorization for our synthetic fixtures and execution method; establish automation budgets, retention/cleanup, and publication rights independently. Do not apply to public jobs, probe undocumented services, or infer research rights from an API key.
@@ -158,7 +164,7 @@ Reports should distinguish **Documented vendor guidance**, **Observed by CV Lint
 
 **Release decision:** Local parser correctness and evidence/report separation can be validated without vendor access. Documentation-based vendor guidance may ship with conservative scope and unknowns. “Tested with vendor X” requires authorized, reviewed results and appropriate publication permission for exactly the named scope; vendor-wide certification remains unsupported. Neither partner onboarding nor the proposed pilot expands CV Linter into candidate ranking, screening decisions, or application submission.
 
-## 6. Proposed Teamtailor support/partner request — unsent
+## 7. Proposed Teamtailor support/partner request — unsent
 
 **Suggested route:** Teamtailor support or the tech partner application route linked in the [official integration guide](https://support.teamtailor.com/en/articles/5477200-integrate-your-hr-recruitment-tool-with-teamtailor). Ask whether an independent candidate-facing research tool qualifies; do not imply that CV Linter is already a customer or approved integration partner.
 
