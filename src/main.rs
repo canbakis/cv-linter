@@ -1,7 +1,7 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, error::ErrorKind};
 mod mcp;
 
-use cv_linter::{Severity, extract_plain_text, lint_plain_text, read_selected_file};
+use cv_linter::{Severity, extract_document, lint_document_with_allow_words, read_selected_file};
 use rmcp::{ServiceExt, transport::stdio};
 use serde::Serialize;
 use std::io::{self, Write};
@@ -17,31 +17,60 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Run deterministic checks on one UTF-8 text CV.
-    Lint(InputArgs),
-    /// Extract ordered, source-located text blocks from one UTF-8 text CV.
+    /// Run deterministic checks on one PDF, DOCX, or Markdown CV.
+    Lint(LintArgs),
+    /// Extract ordered, source-located text blocks from one PDF, DOCX, or Markdown CV.
     ExtractText(InputArgs),
     /// Start the local MCP server.
     Mcp {
         /// Serve MCP over standard input and output.
         #[arg(long)]
         stdio: bool,
-        /// Directory containing files this MCP process may read. Repeat for additional roots.
-        #[arg(long, value_name = "DIR")]
-        allow_root: Vec<PathBuf>,
     },
 }
 
 #[derive(Debug, clap::Args)]
 struct InputArgs {
-    /// Path to one explicitly selected UTF-8 text file.
+    /// Path to one explicitly selected PDF, DOCX, or Markdown file.
     #[arg(long)]
     input: PathBuf,
 }
 
+#[derive(Debug, clap::Args)]
+struct LintArgs {
+    /// Path to one explicitly selected PDF, DOCX, or Markdown file.
+    #[arg(long)]
+    input: PathBuf,
+    /// Accept one spelling term for this run. Repeat for additional terms.
+    #[arg(long = "allow-word", value_name = "WORD")]
+    allow_words: Vec<String>,
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
-    match run(Cli::parse()).await {
+    let cli = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(error) => {
+            let exit_code = if matches!(
+                error.kind(),
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+            ) {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(3)
+            };
+            return match error.print() {
+                Ok(()) => exit_code,
+                Err(error) if error.kind() == io::ErrorKind::BrokenPipe => ExitCode::SUCCESS,
+                Err(error) => {
+                    eprintln!("cv-linter: {error}");
+                    ExitCode::from(3)
+                }
+            };
+        }
+    };
+
+    match run(cli).await {
         Ok(exit_code) => exit_code,
         Err(error) if is_broken_pipe(error.as_ref()) => ExitCode::SUCCESS,
         Err(error) => {
@@ -55,10 +84,12 @@ async fn run(cli: Cli) -> Result<ExitCode, Box<dyn std::error::Error>> {
     match cli.command {
         Command::Lint(args) => {
             let input = read_selected_file(&args.input)?;
-            let report = lint_plain_text(&input)?;
+            let report =
+                lint_document_with_allow_words(&args.input, &input, &args.allow_words).await?;
             let has_errors = report
                 .findings
                 .iter()
+                .chain(&report.spelling_findings)
                 .any(|finding| finding.severity == Severity::Error);
             write_json(&report)?;
             Ok(if has_errors {
@@ -69,18 +100,15 @@ async fn run(cli: Cli) -> Result<ExitCode, Box<dyn std::error::Error>> {
         }
         Command::ExtractText(args) => {
             let input = read_selected_file(&args.input)?;
-            write_json(&extract_plain_text(&input)?)?;
+            write_json(&extract_document(&args.input, &input).await?)?;
             Ok(ExitCode::SUCCESS)
         }
-        Command::Mcp {
-            stdio: true,
-            allow_root,
-        } => {
-            let service = mcp::CvLinterMcp::new(allow_root)?.serve(stdio()).await?;
+        Command::Mcp { stdio: true } => {
+            let service = mcp::CvLinterMcp::new().serve(stdio()).await?;
             service.waiting().await?;
             Ok(ExitCode::SUCCESS)
         }
-        Command::Mcp { stdio: false, .. } => Err("the MVP MCP server requires --stdio".into()),
+        Command::Mcp { stdio: false } => Err("the MVP MCP server requires --stdio".into()),
     }
 }
 

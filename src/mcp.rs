@@ -1,142 +1,106 @@
-use cv_linter::{extract_plain_text, lint_plain_text, read_selected_file};
+use cv_linter::{
+    ExtractError, extract_document, lint_document_with_allow_words, read_selected_file,
+};
 use rmcp::{
     handler::server::wrapper::Parameters, model::CallToolResult, schemars, tool, tool_router,
 };
 use serde::Deserialize;
 use serde_json::json;
-use std::io;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct FileRequest {
-    /// Absolute path to one UTF-8 plain-text CV beneath a server-configured allowed root.
+    /// Absolute path to one PDF, DOCX, or Markdown CV selected for this operation.
     path: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct CvLinterMcp {
-    file_access: FileAccessPolicy,
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct LintRequest {
+    /// Absolute path to one PDF, DOCX, or Markdown CV selected for this operation.
+    path: String,
+    /// Up to 256 spelling terms accepted for this operation only. Each item must be one
+    /// token of at most 360 bytes; values are not persisted.
+    #[serde(default)]
+    #[schemars(length(max = 256), inner(length(min = 1, max = 360)))]
+    allow_words: Vec<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct CvLinterMcp;
+
 impl CvLinterMcp {
-    pub fn new(allowed_roots: Vec<PathBuf>) -> io::Result<Self> {
-        Ok(Self {
-            file_access: FileAccessPolicy::new(allowed_roots)?,
-        })
+    pub fn new() -> Self {
+        Self
     }
 }
 
 #[tool_router(server_handler)]
 impl CvLinterMcp {
     #[tool(
-        description = "Run deterministic local checks on one UTF-8 plain-text CV beneath a user-configured allowed root. This tool does not call a model or use the network."
+        description = "Run deterministic local checks on one explicitly selected PDF, DOCX, or Markdown CV. Non-spelling and spelling findings are returned separately. The checks provide source-derived evidence for parsing and ATS-oriented risk review, but do not establish compatibility with any ATS. This tool does not call a model or use the network."
     )]
-    async fn lint_cv(&self, Parameters(request): Parameters<FileRequest>) -> CallToolResult {
-        let file_access = self.file_access.clone();
+    async fn lint_cv(&self, Parameters(request): Parameters<LintRequest>) -> CallToolResult {
+        let runtime = tokio::runtime::Handle::current();
         worker_result(
             tokio::task::spawn_blocking(move || {
-                let input = read_request(&file_access, &request)?;
-                lint_plain_text(&input)
-                    .map_err(|error| ToolFailure::new("invalid_text", error.to_string()))
+                let (path, input) = read_request(&request.path)?;
+                runtime
+                    .block_on(lint_document_with_allow_words(
+                        &path,
+                        &input,
+                        &request.allow_words,
+                    ))
+                    .map_err(extraction_failure)
             })
             .await,
         )
     }
 
     #[tool(
-        description = "Extract ordered, source-located blocks from one UTF-8 plain-text CV beneath a user-configured allowed root. The returned CV text enters the MCP host context and follows that host/model's data policies."
+        description = "Extract ordered, source-located blocks from one explicitly selected PDF, DOCX, or Markdown CV for host-side ATS-oriented and CV best-practice review. The returned CV text enters the MCP host context and follows that host/model's data policies."
     )]
     async fn extract_cv_text(
         &self,
         Parameters(request): Parameters<FileRequest>,
     ) -> CallToolResult {
-        let file_access = self.file_access.clone();
+        let runtime = tokio::runtime::Handle::current();
         worker_result(
             tokio::task::spawn_blocking(move || {
-                let input = read_request(&file_access, &request)?;
-                extract_plain_text(&input)
-                    .map_err(|error| ToolFailure::new("invalid_text", error.to_string()))
+                let (path, input) = read_request(&request.path)?;
+                runtime
+                    .block_on(extract_document(&path, &input))
+                    .map_err(extraction_failure)
             })
             .await,
         )
     }
 }
 
-#[derive(Debug, Clone)]
-struct FileAccessPolicy {
-    allowed_roots: Vec<PathBuf>,
-}
-
-impl FileAccessPolicy {
-    fn new(allowed_roots: Vec<PathBuf>) -> io::Result<Self> {
-        if allowed_roots.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "MCP requires at least one explicit --allow-root directory",
-            ));
-        }
-
-        let mut canonical_roots = Vec::with_capacity(allowed_roots.len());
-        for root in allowed_roots {
-            let canonical_root = root.canonicalize()?;
-            if !canonical_root.is_dir() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidInput,
-                    "an MCP allowed root is not a directory",
-                ));
-            }
-            canonical_roots.push(canonical_root);
-        }
-
-        Ok(Self {
-            allowed_roots: canonical_roots,
-        })
+fn read_request(path: &str) -> Result<(PathBuf, Vec<u8>), ToolFailure> {
+    let path = Path::new(path);
+    if !path.is_absolute() {
+        return Err(ToolFailure::new(
+            "invalid_path",
+            "the selected document path must be absolute".to_owned(),
+        ));
     }
 
-    fn read_selected_file(&self, path: &Path) -> io::Result<Vec<u8>> {
-        if !path.is_absolute()
-            || path
-                .components()
-                .any(|component| component == Component::ParentDir)
-        {
-            return Err(path_not_allowed());
-        }
-
-        let canonical_path = path.canonicalize()?;
-        if !self
-            .allowed_roots
-            .iter()
-            .any(|root| canonical_path.starts_with(root))
-        {
-            return Err(path_not_allowed());
-        }
-
-        read_selected_file(&canonical_path)
-    }
+    let input = read_selected_file(path)
+        .map_err(|error| ToolFailure::new("input_read_failed", error.to_string()))?;
+    Ok((path.to_owned(), input))
 }
 
-fn path_not_allowed() -> io::Error {
-    io::Error::new(
-        io::ErrorKind::PermissionDenied,
-        "requested path is outside the configured MCP roots",
-    )
-}
-
-fn read_request(
-    file_access: &FileAccessPolicy,
-    request: &FileRequest,
-) -> Result<Vec<u8>, ToolFailure> {
-    file_access
-        .read_selected_file(Path::new(&request.path))
-        .map_err(|error| {
-            let code = if error.kind() == io::ErrorKind::PermissionDenied {
-                "path_not_allowed"
-            } else {
-                "input_read_failed"
-            };
-            ToolFailure::new(code, error.to_string())
-        })
+fn extraction_failure(error: ExtractError) -> ToolFailure {
+    let code = match &error {
+        ExtractError::UnsupportedFormat { .. } => "unsupported_format",
+        ExtractError::TooManyAllowWords { .. } | ExtractError::InvalidAllowWord { .. } => {
+            "invalid_options"
+        }
+        _ => "invalid_document",
+    };
+    ToolFailure::new(code, error.to_string())
 }
 
 fn worker_result<T: serde::Serialize>(

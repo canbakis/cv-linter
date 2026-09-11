@@ -1,3 +1,5 @@
+mod common;
+
 use serde_json::{Value, json};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -8,6 +10,128 @@ use std::time::{Duration, Instant};
 use tempfile::tempdir;
 
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(5);
+
+#[test]
+fn cli_help_succeeds_and_usage_errors_use_the_operational_exit_code() {
+    let help = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .arg("--help")
+        .output()
+        .unwrap();
+    assert!(help.status.success());
+    assert!(String::from_utf8_lossy(&help.stdout).contains("Usage:"));
+
+    let invalid = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .arg("lint")
+        .output()
+        .unwrap();
+    assert_eq!(invalid.status.code(), Some(3));
+    assert!(String::from_utf8_lossy(&invalid.stderr).contains("--input"));
+}
+
+#[test]
+fn cli_spelling_allow_words_are_operation_scoped() {
+    let directory = tempdir().unwrap();
+    let input_path = directory.path().join("cv.md");
+    fs::write(&input_path, "# Profil\n\nquuxzorp\n").unwrap();
+
+    let default_output = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .args(["lint", "--input"])
+        .arg(&input_path)
+        .output()
+        .unwrap();
+    assert!(default_output.status.success());
+    let default_report: Value = serde_json::from_slice(&default_output.stdout).unwrap();
+    assert_eq!(default_report["schema_version"], "0.3.0");
+    assert!(
+        default_report["findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|finding| !finding["rule_id"]
+                .as_str()
+                .unwrap()
+                .starts_with("cv.spelling."))
+    );
+    assert!(
+        default_report["spelling_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| finding["rule_id"] == "cv.spelling.unknown_word"
+                && finding["message"].as_str().unwrap().contains("quuxzorp"))
+    );
+
+    let allowed_output = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .args(["lint", "--input"])
+        .arg(&input_path)
+        .args(["--allow-word", "quuxzorp"])
+        .output()
+        .unwrap();
+    assert!(allowed_output.status.success());
+    let allowed_report: Value = serde_json::from_slice(&allowed_output.stdout).unwrap();
+    assert!(
+        allowed_report["spelling_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|finding| finding["rule_id"] != "cv.spelling.unknown_word")
+    );
+}
+
+#[test]
+fn cli_extracts_all_mvp_formats() {
+    let directory = tempdir().unwrap();
+    let fixtures = [
+        (
+            "cv.md",
+            include_bytes!("fixtures/swedish-cv.md").to_vec(),
+            "Göteborg",
+        ),
+        (
+            "cv.pdf",
+            common::text_pdf(&[
+                "Alex Andersson",
+                "alex.andersson@example.com",
+                "Senior Rustutvecklare",
+            ]),
+            "Rustutvecklare",
+        ),
+        (
+            "cv.docx",
+            common::docx(&[
+                "Alex Andersson",
+                "alex.andersson@example.com",
+                "Rustutvecklare i Göteborg",
+            ]),
+            "Göteborg",
+        ),
+    ];
+
+    for (name, input, expected_text) in fixtures {
+        let input_path = directory.path().join(name);
+        fs::write(&input_path, input).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+            .args(["extract-text", "--input"])
+            .arg(&input_path)
+            .output()
+            .unwrap();
+
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(output.stderr.is_empty());
+        let document: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(document["status"], "ok");
+        assert_eq!(document["extractor"]["name"], "xberg");
+        assert!(document["blocks"].as_array().unwrap().iter().any(|block| {
+            block["text"]
+                .as_str()
+                .is_some_and(|text| text.contains(expected_text))
+        }));
+    }
+}
 
 #[test]
 fn extract_text_cli_emits_json_without_diagnostics_on_stdout() {
@@ -96,23 +220,11 @@ fn closed_stdout_pipe_does_not_panic() {
 }
 
 #[test]
-fn mcp_requires_an_explicit_allowed_root() {
-    let output = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
-        .args(["mcp", "--stdio"])
-        .output()
-        .unwrap();
-
-    assert_eq!(output.status.code(), Some(3));
-    assert!(output.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--allow-root"));
-}
-
-#[test]
 fn stdio_mcp_lists_and_calls_both_tools() {
     let directory = tempdir().unwrap();
     let input_path = directory.path().join("cv.txt");
     fs::write(&input_path, "Profil\nUtvecklare\0\n").unwrap();
-    let mut mcp = McpClient::start(directory.path());
+    let mut mcp = McpClient::start();
 
     let tools = mcp.request(json!({
         "jsonrpc": "2.0",
@@ -127,6 +239,25 @@ fn stdio_mcp_lists_and_calls_both_tools() {
         .map(|tool| tool["name"].as_str().unwrap())
         .collect::<Vec<_>>();
     assert_eq!(names, vec!["extract_cv_text", "lint_cv"]);
+    let lint_schema = tools["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|tool| tool["name"] == "lint_cv")
+        .unwrap()["inputSchema"]
+        .clone();
+    assert_eq!(lint_schema["properties"]["allow_words"]["maxItems"], 256);
+    assert_eq!(
+        lint_schema["properties"]["allow_words"]["items"]["maxLength"],
+        360
+    );
+    assert!(
+        lint_schema["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|field| field != "allow_words")
+    );
 
     let extraction = mcp.call_tool(3, "extract_cv_text", &input_path);
     assert_eq!(extraction["result"]["isError"], false);
@@ -146,39 +277,107 @@ fn stdio_mcp_lists_and_calls_both_tools() {
 }
 
 #[test]
-fn stdio_mcp_rejects_paths_outside_the_allowed_root() {
-    let allowed = tempdir().unwrap();
-    let outside = tempdir().unwrap();
-    let outside_path = outside.path().join("private.txt");
-    fs::write(&outside_path, "not authorized\n").unwrap();
-    let mut mcp = McpClient::start(allowed.path());
+fn stdio_mcp_and_cli_return_equivalent_markdown_results() {
+    let directory = tempdir().unwrap();
+    let input_path = directory.path().join("cv.md");
+    fs::write(&input_path, include_bytes!("fixtures/swedish-cv.md")).unwrap();
 
-    assert_path_not_allowed(mcp.call_tool(2, "extract_cv_text", &outside_path));
-    assert_path_not_allowed(mcp.call_tool(
-        3,
-        "extract_cv_text",
-        std::path::Path::new("relative.txt"),
-    ));
+    let cli_extract = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .args(["extract-text", "--input"])
+        .arg(&input_path)
+        .output()
+        .unwrap();
+    assert!(cli_extract.status.success());
+    let cli_extract: Value = serde_json::from_slice(&cli_extract.stdout).unwrap();
 
-    let parent_path = allowed.path().join("nested").join("..").join("cv.txt");
-    assert_path_not_allowed(mcp.call_tool(4, "extract_cv_text", &parent_path));
+    let cli_lint = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
+        .args(["lint", "--input"])
+        .arg(&input_path)
+        .output()
+        .unwrap();
+    assert!(cli_lint.status.success());
+    let cli_lint: Value = serde_json::from_slice(&cli_lint.stdout).unwrap();
 
-    #[cfg(unix)]
-    {
-        let link_path = allowed.path().join("linked.txt");
-        std::os::unix::fs::symlink(&outside_path, &link_path).unwrap();
-        assert_path_not_allowed(mcp.call_tool(5, "extract_cv_text", &link_path));
-    }
+    let mut mcp = McpClient::start();
+    let mcp_extract = mcp.call_tool(2, "extract_cv_text", &input_path);
+    let mcp_lint = mcp.call_tool(3, "lint_cv", &input_path);
 
+    assert_eq!(mcp_extract["result"]["structuredContent"], cli_extract);
+    assert_eq!(mcp_lint["result"]["structuredContent"], cli_lint);
     mcp.shutdown();
 }
 
-fn assert_path_not_allowed(response: Value) {
-    assert_eq!(response["result"]["isError"], true);
-    assert_eq!(
-        response["result"]["structuredContent"]["error"]["code"],
-        "path_not_allowed"
+#[test]
+fn stdio_mcp_accepts_bounded_operation_scoped_spelling_allow_words() {
+    let directory = tempdir().unwrap();
+    let input_path = directory.path().join("cv.md");
+    fs::write(&input_path, "# Profil\n\nquuxzorp\n").unwrap();
+    let mut mcp = McpClient::start();
+
+    let before = mcp.call_tool(2, "lint_cv", &input_path);
+    assert!(
+        before["result"]["structuredContent"]["spelling_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| finding["rule_id"] == "cv.spelling.unknown_word")
     );
+
+    let allowed = mcp.call_tool_with_arguments(
+        3,
+        "lint_cv",
+        json!({ "path": &input_path, "allow_words": ["quuxzorp"] }),
+    );
+    assert_eq!(allowed["result"]["isError"], false);
+    assert!(
+        allowed["result"]["structuredContent"]["spelling_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|finding| finding["rule_id"] != "cv.spelling.unknown_word")
+    );
+    assert_eq!(
+        allowed["result"]["structuredContent"]["options"]["spelling_allow_words"],
+        json!(["quuxzorp"])
+    );
+
+    let after = mcp.call_tool(4, "lint_cv", &input_path);
+    assert!(
+        after["result"]["structuredContent"]["spelling_findings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|finding| finding["rule_id"] == "cv.spelling.unknown_word")
+    );
+
+    let invalid = mcp.call_tool_with_arguments(
+        5,
+        "lint_cv",
+        json!({ "path": &input_path, "allow_words": ["two words"] }),
+    );
+    assert_eq!(invalid["result"]["isError"], true);
+    assert_eq!(
+        invalid["result"]["structuredContent"]["error"]["code"],
+        "invalid_options"
+    );
+    mcp.shutdown();
+}
+
+#[test]
+fn stdio_mcp_accepts_any_selected_absolute_path() {
+    let directory = tempdir().unwrap();
+    let input_path = directory.path().join("selected.md");
+    fs::write(&input_path, "# Profil\n\nUtvecklare\n").unwrap();
+    let mut mcp = McpClient::start();
+
+    let extraction = mcp.call_tool(2, "extract_cv_text", &input_path);
+    assert_eq!(extraction["result"]["isError"], false);
+    assert_eq!(
+        extraction["result"]["structuredContent"]["blocks"][0]["id"],
+        "block-0001"
+    );
+
+    mcp.shutdown();
 }
 
 struct McpClient {
@@ -189,10 +388,9 @@ struct McpClient {
 }
 
 impl McpClient {
-    fn start(allowed_root: &std::path::Path) -> Self {
+    fn start() -> Self {
         let mut child = Command::new(env!("CARGO_BIN_EXE_cv-linter"))
-            .args(["mcp", "--stdio", "--allow-root"])
-            .arg(allowed_root)
+            .args(["mcp", "--stdio"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -247,13 +445,17 @@ impl McpClient {
     }
 
     fn call_tool(&mut self, id: u64, name: &str, path: &std::path::Path) -> Value {
+        self.call_tool_with_arguments(id, name, json!({ "path": path }))
+    }
+
+    fn call_tool_with_arguments(&mut self, id: u64, name: &str, arguments: Value) -> Value {
         self.request(json!({
             "jsonrpc": "2.0",
             "id": id,
             "method": "tools/call",
             "params": {
                 "name": name,
-                "arguments": { "path": path }
+                "arguments": arguments
             }
         }))
     }

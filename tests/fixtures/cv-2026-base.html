@@ -1,0 +1,257 @@
+<!doctype html>
+<!-- Synthetic CV fixture. Names, organizations, dates, and claims are fictional. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alex-Andersson-CV</title>
+<style>
+  :root {
+    --ink: #1e1e2e;
+    --soft: #5c5f77;
+    --rule: #bcc0cc;
+    --accent: #40a02b;
+    --accent-ink: #357d22;
+    --serif: Charter, "Bitstream Charter", "Source Serif 4", "Source Serif Pro",
+             Cambria, Georgia, "Times New Roman", serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: #eceff4;
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 10.5pt;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .cv {
+    max-width: 210mm;
+    margin: 24px auto;
+    padding: 17mm 20mm 15mm;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(30, 30, 46, 0.12);
+  }
+
+  /* Masthead: the one place colour is spent. */
+  .masthead { margin-bottom: 18px; }
+
+  h1 {
+    margin: 0;
+    font-size: 25pt;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .role-line {
+    margin: 4px 0 0;
+    font-size: 12pt;
+    color: var(--accent);
+  }
+
+  .contact {
+    margin: 6px 0 10px;
+    font-size: 9.5pt;
+    color: var(--soft);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 10px;
+  }
+
+  h2 {
+    margin: 20px 0 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--rule);
+    font-size: 12.5pt;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /* Roles need more air above them than the lines inside a role, or the
+     Technology: line reads as belonging to the job that follows it. */
+  h3 {
+    margin: 18px 0 0;
+    font-size: 11pt;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  p { margin: 6px 0; }
+
+  /* Location and dates, directly under a job title. */
+  p.meta {
+    margin: 1px 0 6px;
+    font-size: 9.5pt;
+    color: var(--soft);
+  }
+
+  /* "Technology:", skill groups, languages — a list set as paragraphs. */
+  p.labeled { margin: 5px 0; font-size: 10pt; }
+  p.labeled strong { font-weight: 600; }
+
+  ul { margin: 6px 0; padding-left: 17px; }
+  li { margin: 3px 0; padding-left: 2px; }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+
+  /* Coloured rather than underlined: underlines on a CV read as a web page. */
+  a { color: var(--accent-ink); text-decoration: none; }
+
+  @page { size: A4; margin: 17mm 20mm 15mm; }
+
+  @media print {
+    body { background: #fff; }
+    .cv { margin: 0; padding: 0; max-width: none; box-shadow: none; }
+
+    /* Keep a heading with what it introduces; never strand one at a page foot. */
+    h1, h2, h3, p.meta { break-after: avoid; page-break-after: avoid; }
+    h2, h3 { break-inside: avoid; page-break-inside: avoid; }
+    .masthead { break-inside: avoid; page-break-inside: avoid; }
+    p, li { orphans: 2; widows: 2; }
+
+    /* Without this Chrome drops the accent rule to save ink. */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<article class="cv">
+<header class="masthead"><h1>Alex Andersson</h1>
+<p class="role-line">Software Engineering Manager | AI Lead</p>
+<p class="contact">Stockholm, Sweden | <a href="mailto:alex.andersson@example.com">alex.andersson@example.com</a> | <a href="https://example.com/alex-andersson">example.com/alex-andersson</a> | <a href="https://alex.example">alex.example</a></p>
+</header><h2>Summary</h2>
+<p>Hands-on Software Engineering Manager with 15+ years across SaaS, e-commerce and
+product engineering. Leads as both line manager and player-coach: hiring,
+coaching, delivery and team health, while staying close enough to the code to
+challenge assumptions and remove friction. A recurring theme is modernization —
+core business systems and long-lived products that had to keep running while
+they were being changed. Currently focused on AI and agentic engineering:
+orchestration, evaluation, context engineering and RAG, and on building the
+engineering practices around them rather than only adding AI tools.</p>
+<h2>Core Competencies</h2>
+<p class="labeled"><strong>Leadership:</strong> Line management, team building, coaching and mentoring,
+technical recruitment, cross-functional team leadership, stakeholder
+communication, technology and product strategy, annual KPI setting</p>
+<p class="labeled"><strong>Delivery:</strong> Agile and Scrum, Scrum Master, incremental modernization, technical
+debt reduction, on-call and incident process, performance optimization,
+engineering culture and developer experience</p>
+<p class="labeled"><strong>AI Engineering:</strong> Agentic development practices, agent orchestration, AI
+evaluation and observability, context engineering, RAG and knowledge systems,
+model routing and cost/performance trade-offs, AI governance and responsible
+adoption</p>
+<h2>Experience</h2>
+<h3>Software Engineering Manager, Acme Documentation</h3>
+<p class="meta">Stockholm, Sweden | Apr 2024 - Aug 2025</p>
+<ul>
+<li>Led a cross-functional team of eight, including a UX designer and a product
+manager, delivering Acme Documentation's Next-Generation Editor.</li>
+<li>Diagnosed and fixed multiple N+1 select problems in the editor; the worst cut a
+single request from roughly 5,000 MySQL queries and 10 seconds to one query in
+under a second.</li>
+<li>Removed 30,000 lines of dead code as part of a sustained technical debt
+reduction effort, alongside ongoing feature delivery.</li>
+<li>Ran agentic development workshops for two engineering teams, around 15
+developers, covering context engineering, AI-assisted development, context
+pollution and its effect on output accuracy, and agent skills.</li>
+<li>Built a prototype MCP tool during a company creative day, making product content
+and authoring usable inside AI harnesses such as Claude Desktop, including its
+own UI rendered inside Claude.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> TypeScript, React, MySQL, MCP, AI tooling</p>
+<h3>Software Engineering Manager, Example Telecom</h3>
+<p class="meta">Sweden | Aug 2023 - Jan 2024</p>
+<ul>
+<li>Led a cross-functional team of six: three backend engineers and three native
+mobile developers.</li>
+<li>Oversaw development of a strategic feature on a tight deadline, resulting in
+new revenue opportunities.</li>
+<li>Connected the company's Confluence content to its enterprise ChatGPT, giving
+employees access to internal documentation through chat.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> Azure, AWS, C#, Next.js, Swift, Kotlin</p>
+<h3>Software Engineering Manager, Example Groceries</h3>
+<p class="meta">Stockholm, Sweden | Jul 2022 - Apr 2023</p>
+<ul>
+<li>Line-managed a team of five experienced developers while contributing
+code as a React developer on the delivery system.</li>
+<li>Implemented an on-call procedure with support from the department director.</li>
+<li>Ran a weekly rotating team responsibility for daily meetings and support.</li>
+<li>Fostered mentoring, technical leadership and pragmatic agile management within
+the team.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> AWS, C#, TypeScript, serverless, React, Next.js</p>
+<h3>Senior Frontend Developer, Example Advertising</h3>
+<p class="meta">Stockholm, Sweden | Jan 2018 - Jul 2022</p>
+<ul>
+<li>Built Angular applications across Display Ad Analytics, Campaign Manager,
+Scheduling, Feed Automation and Creative Editor, with a strong focus on code
+quality, automated testing and engineering practice.</li>
+<li>Participated in the architecture steering group, working with microservices,
+event-bus architecture and an initiative to containerize product features.</li>
+<li>Worked with Azure and Azure DevOps using ARM templates and Bicep, followed
+later by a migration to GitHub Actions.</li>
+<li>Contributed to C# code when needed and supported debugging and issue
+investigation.</li>
+<li>Led frontend forum initiatives for a group of 8-15 frontend developers,
+including a co-presented demo on state management using RxJS observables in a
+Redux-like design.</li>
+<li>Served as Scrum Master in later years, facilitating agile ceremonies and
+improving team collaboration.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> Angular, TypeScript, C#, Azure, Azure DevOps, microservices</p>
+<h3>Developer and Consultant, Freelance</h3>
+<p class="meta">Gothenburg, Sweden | Dec 2014 - Jun 2017</p>
+<ul>
+<li>Delivered website development, Android application development, e-commerce
+consulting and gamification work for a range of clients.</li>
+<li>Occasionally gave workshops on web development fundamentals.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> JavaScript, Angular, Node.js, Sass, Java, PHP, iOS, Kotlin</p>
+<h3>Developer, Example Mobile Studio</h3>
+<p class="meta">Gothenburg, Sweden | 2010 - Dec 2014</p>
+<ul>
+<li>Started as a web developer and progressed into mobile development and team
+leadership responsibilities.</li>
+<li>Worked across backend and frontend development, web services and mobile
+applications.</li>
+</ul>
+<p class="labeled"><strong>Technology:</strong> PHP, Android/Java, JavaScript, C#, Flex/ActionScript, OpenCart,
+Drupal, MySQL, PostgreSQL, ArcGIS</p>
+<h2>Technical Skills</h2>
+<p class="labeled"><strong>AI and Agentic Systems:</strong> Model Context Protocol (MCP), Agent2Agent (A2A),
+Retrieval-Augmented Generation (RAG), AI evaluation, context engineering,
+vector databases, AI automation, AI governance</p>
+<p class="labeled"><strong>AI and Developer Tools:</strong> Claude Code, Codex, OpenCode, Hermes Agent, Agent Runner,
+OpenAI API, OpenRouter, LangChain, Promptfoo, custom GPTs</p>
+<p class="labeled"><strong>Architecture:</strong> System design, distributed systems, API design, microservices,
+serverless, event-driven architecture, performance optimization, design patterns</p>
+<p class="labeled"><strong>Languages:</strong> TypeScript, JavaScript, SQL, Python, Go, Rust, Dart, C#, PHP,
+Java, C++</p>
+<p class="labeled"><strong>Runtimes and Frameworks:</strong> Node.js, Bun, React, Next.js, Angular, Express,
+Fastify, .NET, SST, Flutter</p>
+<p class="labeled"><strong>Cloud and Platforms:</strong> Cloudflare, AWS, Azure, Supabase, Firebase, GitHub
+Actions, Azure DevOps</p>
+<p class="labeled"><strong>Testing and Evaluation:</strong> Playwright, Vitest, Jest, Cypress, Puppeteer, k6,
+PactFlow, Promptfoo, Gherkin/BDD</p>
+<h2>Projects</h2>
+<p><strong>Example AI Labs</strong> — Builds and publishes open-source AI developer tooling around
+agent evaluation, observability and developer workflows.</p>
+<p><strong>focus-assist</strong> — Open-source agent skill that reduces cognitive load and
+supports decision-making when someone is juggling too much context.
+<a href="https://github.com/example/focus-assist">github.com/example/focus-assist</a></p>
+<h2>Education</h2>
+<p><strong>Example University</strong> | Gothenburg, Sweden</p>
+<p>BSc (Bachelor of Science), Computer Software Engineering | 2004 - 2009</p>
+<h2>Languages</h2>
+<p class="labeled"><strong>English:</strong> Full professional proficiency</p>
+<p class="labeled"><strong>Swedish:</strong> Native proficiency</p>
+<h2>Outside Work</h2>
+<p>Enjoys hiking, photography, cooking and reading fiction. Builds small side
+projects and experiments with generative AI for image, video and voice.</p>
+</article>
+</body>
+</html>
