@@ -4,12 +4,29 @@
 [![Release](https://img.shields.io/github/v/release/canbakis/cv-linter?display_name=tag&sort=semver)](https://github.com/canbakis/cv-linter/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Local, deterministic CV extraction and linting for PDF, DOCX, and Markdown,
-available as a CLI, an MCP server, and a Claude Desktop extension.
+Local, deterministic CV/resume linting for PDF, DOCX, and Markdown that works
+with your AI agents! Available as a CLI, an MCP server, and a Claude Desktop
+extension.
 
-CV Linter checks document structure, extraction quality, suspicious formatting,
-and English or Swedish spelling. Results are JSON with source locations, stable
-block IDs, and a SHA-256 input identity. It never edits the selected document.
+## How it works
+
+Point CV Linter at a document. It extracts ordered, source-located text and runs
+deterministic checks. Your AI agent receives structured evidence it can use to
+review the CV, explain issues, and suggest improvements. CV Linter itself calls
+no model and never edits the document.
+
+## Features that boost your AI
+
+- **Grounded feedback:** Source locations and stable block IDs help agents cite
+  the exact evidence behind their suggestions.
+- **Consistent checks:** Detects missing structure, extraction problems,
+  suspicious formatting, and spelling issues.
+- **Offline spelling:** English and Swedish dictionaries are bundled today;
+  support for additional downloadable dictionaries can be added later.
+- **Traceable results:** Returns deterministic JSON with ordered text and a
+  SHA-256 identity for the input document.
+- **Agent-ready access:** Works through the CLI, stdio MCP tools, and a bundled
+  Claude Desktop extension.
 
 ## Install
 
