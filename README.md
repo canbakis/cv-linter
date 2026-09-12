@@ -4,6 +4,8 @@
 [![Release](https://img.shields.io/github/v/release/canbakis/cv-linter?display_name=tag&sort=semver)](https://github.com/canbakis/cv-linter/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+![CV Linter turns PDF, DOCX, and Markdown resumes into grounded feedback for AI agents](docs/assets/cv-linter-cover.webp)
+
 Local, deterministic CV/resume linting for PDF, DOCX, and Markdown that works
 with your AI agents! Available as a CLI, an MCP server, and a Claude Desktop
 extension.
