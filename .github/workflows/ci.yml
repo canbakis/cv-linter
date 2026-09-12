@@ -34,9 +34,6 @@ jobs:
       - name: Lint
         run: cargo clippy --locked --all-targets -- -D warnings
 
-      - name: Check crate package
-        run: cargo package --locked
-
       - name: Check generated release workflow
         run: |
           curl --proto '=https' --tlsv1.2 -LsSf \

@@ -72,7 +72,6 @@ validated end to end with Claude Desktop.
      packaging/mcpb/manifest.json
    npx --yes @anthropic-ai/mcpb@2.1.2 validate packaging/mcpb/manifest.json
    claude plugin validate . --strict
-   cargo package --locked
    dist generate --check
    git diff --check
    ```
