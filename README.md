@@ -27,8 +27,8 @@ no model and never edits the document.
   support for additional downloadable dictionaries can be added later.
 - **Traceable results:** Returns deterministic JSON with ordered text and a
   SHA-256 identity for the input document.
-- **Agent-ready access:** Works through the CLI, stdio MCP tools, and a bundled
-  Claude Desktop extension.
+- **Agent-ready access:** Works through the CLI, stdio MCP tools, Hermes Agent,
+  Claude Code, and a bundled Claude Desktop extension.
 
 ## Install
 
@@ -74,6 +74,22 @@ cv-linter lint --input resume.md --allow-word ProductName
 
 `lint` returns deterministic findings and `extract-text` returns ordered,
 source-located text blocks. Run `cv-linter --help` for the complete interface.
+
+## Hermes Agent
+
+This repository is also a portable Agent Plugins v1 package for Hermes. Install
+it from Hermes Desktop's plugin installer using the repository URL, or use the
+CLI:
+
+```sh
+hermes plugins install canbakis/cv-linter --no-enable
+hermes plugins enable cv-linter
+```
+
+Portable packages are installed disabled. Enable the package after installing,
+and make sure the `cv-linter` executable is installed and available on PATH so
+Hermes can start the bundled local MCP server. The package includes the
+`skills/cv-linter` Agent Skill and the `lint_cv` / `extract_cv_text` MCP tools.
 
 ## MCP and Claude plugin
 

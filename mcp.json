@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "cv-linter": {
+      "type": "stdio",
+      "command": "cv-linter",
+      "args": ["mcp", "--stdio"]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "cv-linter",
+  "version": "0.1.0",
+  "description": "Local, deterministic CV and resume linting for PDF, DOCX, and Markdown with grounded guidance for AI agents.",
+  "author": {
+    "name": "Can Bakis",
+    "url": "https://github.com/canbakis"
+  },
+  "homepage": "https://github.com/canbakis/cv-linter",
+  "repository": "https://github.com/canbakis/cv-linter",
+  "license": "MIT",
+  "keywords": ["cv", "resume", "linting", "mcp", "skills"]
+}
