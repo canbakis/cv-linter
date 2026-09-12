@@ -1,7 +1,7 @@
 # CV Linter: Product, Architecture, and Implementation Plan
 
 **Date:** 10 September 2026
-**Status:** Agreed YAGNI MVP direction. The local Rust core, CLI, and stdio MCP route through the project-owned Xberg 1.1.5 PDF/DOCX/Markdown adapter. Synthetic Swedish format, error, and CLI/MCP parity tests cover the current adapter; schema 0.3.0, ruleset 0.2.2, and Spellbook 0.4.2 spelling checks are implemented with pinned LibreOffice `en_US`/`sv_SE` dictionaries. OCR remains disabled, and plain UTF-8 remains an internal/test/debug seam. The plugin-layout `skills/cv-linter/` directory is present and validator-clean as host instructions; a plugin manifest and platform-specific packaged release remain future work.
+**Status:** Agreed YAGNI MVP direction. The local Rust core, CLI, and stdio MCP route through the project-owned Xberg 1.1.5 PDF/DOCX/Markdown adapter. Synthetic Swedish format, error, and CLI/MCP parity tests cover the current adapter; schema 0.3.0, ruleset 0.2.2, and Spellbook 0.4.2 spelling checks are implemented with pinned LibreOffice `en_US`/`sv_SE` dictionaries. OCR remains disabled, and plain UTF-8 remains an internal/test/debug seam. Claude plugin metadata, a Claude Desktop MCPB manifest, and tag-driven GitHub release configuration are present; the first cross-platform release, OS signing, and end-to-end host smoke tests remain release work.
 
 ## 1. Product decision
 
@@ -139,4 +139,4 @@ Implementation acceptance criteria are:
 4. Xberg's exact pinned version, minimal features, compilation, fixture behavior, dependency/binary impact, and licenses are recorded before release; recent rename/API churn and MSRV are verified.
 5. Host-AI examples include structured requirement verdicts, internally grounded citations translated to human-readable source locations, confidence, reviewable diffs, and questions for missing facts; they distinguish local linting from host processing and contain no invented facts or uncited rewrites.
 
-The next implementation slice expands representative Swedish fixtures and extraction validation. A platform-specific packaged release and broader host distribution remain future work. Measure early-adopter workflow usefulness before adding UI, desktop packaging, vendor integrations, or persistence. No deployment, provider submission, or ATS test is authorized by this document.
+The next implementation slice validates the generated release artifacts and Claude Desktop bundle on supported macOS and Windows hosts, expands representative Swedish fixtures, and completes the dependency-license review. Measure early-adopter workflow usefulness before adding UI, a standalone desktop application, vendor integrations, or persistence. No provider-directory submission or ATS test is authorized by this document.

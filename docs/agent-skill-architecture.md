@@ -1,7 +1,7 @@
 # CV Linter: Agent Skill and MCP Architecture
 
 **Date:** 10 September 2026
-**Status:** Agreed MVP contract. The local Rust core, CLI, and stdio MCP route through the project-owned Xberg 1.1.5 PDF/DOCX/Markdown adapter. Synthetic Swedish format, error, and CLI/MCP parity tests cover the current adapter. Schema 0.3.0, ruleset 0.2.2, and Spellbook 0.4.2 spelling checks with pinned LibreOffice `en_US`/`sv_SE` dictionaries are implemented. The plugin-layout `skills/cv-linter/` directory is present and validator-clean as host instructions, while a plugin manifest and platform-specific packaged release remain future work; OCR is disabled and plain UTF-8 remains an internal/test/debug seam.
+**Status:** Agreed MVP contract. The local Rust core, CLI, and stdio MCP route through the project-owned Xberg 1.1.5 PDF/DOCX/Markdown adapter. Synthetic Swedish format, error, and CLI/MCP parity tests cover the current adapter. Schema 0.3.0, ruleset 0.2.2, and Spellbook 0.4.2 spelling checks with pinned LibreOffice `en_US`/`sv_SE` dictionaries are implemented. The plugin-layout `skills/cv-linter/` directory, Claude plugin manifest, Claude Desktop MCPB manifest, and tag-driven GitHub release configuration are present; the first cross-platform release and host smoke tests remain release work. OCR is disabled and plain UTF-8 remains an internal/test/debug seam.
 **Related:** [Product and architecture plan](architecture-and-product-plan.md) · [Deferred UI direction](ui-design.md)
 
 ## 1. Architecture decision
@@ -26,7 +26,7 @@ The product is intentionally MCP-first for an early-adopter wedge: technically c
 
 ## 2. Package and executable boundary
 
-The planned release contains one platform-specific executable plus a thin Agent Skill package or host setup that explains how to invoke it. Following [OpenAI's plugin skill layout](https://developers.openai.com/plugins/build/skills), `skills/cv-linter/SKILL.md` provides the host instructions and is validator-clean; a plugin manifest and platform-specific packaged release remain future work. The package is not a second implementation.
+The planned release contains platform-specific executables plus thin host packaging that explains how to invoke them. `skills/cv-linter/SKILL.md` provides the host instructions; `.claude-plugin/plugin.json` and `.mcp.json` expose those instructions and the installed executable to Claude Code/Cowork. Claude Desktop receives a single MCPB with a dependency-free Node.js launcher that selects a bundled macOS or Windows Rust executable and starts its stdio MCP server. The launcher contains no linting or extraction logic and is not a second implementation.
 
 ```text
 cv-linter/

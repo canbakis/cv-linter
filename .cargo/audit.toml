@@ -1,0 +1,13 @@
+[advisories]
+informational_warnings = ["unmaintained", "unsound", "notice"]
+
+[output]
+# Vulnerabilities always fail. Unsound and yanked packages also fail; the
+# known unmaintained `paste` build-time transitive remains visible as a warning.
+deny = ["unsound", "yanked"]
+quiet = false
+show_tree = true
+
+[yanked]
+enabled = true
+update_index = true

@@ -2,7 +2,39 @@
 
 CV Linter is a local Rust executable for deterministic CV extraction and linting. The MVP accepts one explicitly selected PDF, DOCX, or Markdown file at a time. It does not scan directories, make network requests, call a model, or modify the input. A configured host can combine linting with explicit extraction for ATS-oriented risk review and CV best-practice review.
 
-## Prerequisites
+## Install
+
+GitHub Releases are the initial distribution source. After the first tagged
+release, macOS and Linux users can install the latest compatible binary with:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf \
+  https://github.com/canbakis/cv-linter/releases/latest/download/cv-linter-installer.sh | sh
+```
+
+Windows users can install from PowerShell with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/canbakis/cv-linter/releases/latest/download/cv-linter-installer.ps1 | iex"
+```
+
+These installers download the matching binary from the GitHub release and add
+it under Cargo's binary directory. Release archives, SHA-256 checksums, and
+GitHub build attestations remain available for users who prefer to download and
+verify artifacts manually.
+
+Rust users can build directly from a tagged source release:
+
+```sh
+cargo install --git https://github.com/canbakis/cv-linter \
+  --tag v0.1.0 --locked
+```
+
+The prebuilt Linux binaries target glibc-based distributions comparable to
+Ubuntu 22.04 or newer. Build from the tagged source on older glibc or musl-based
+systems.
+
+## Build from source
 
 Install Rust and Cargo. The repository pins the toolchain in [`rust-toolchain.toml`](rust-toolchain.toml) (Rust 1.94.0, with `rustfmt` and `clippy`), so `rustup` will select it when you run Cargo commands from this directory.
 
@@ -63,8 +95,31 @@ The `lint_cv` tool accepts an operation-scoped `allow_words` array with single-w
 
 Parsing and deterministic linting run locally in the CV Linter executable. If extracted CV text is handed to a configured AI host, it enters that host's context and follows the host/model's data policies. The complete workflow is local only when the selected model is local and verified not to forward data. CV Linter does not persist raw CVs, provide cloud storage, or control host transcripts.
 
+## Claude
+
+Each GitHub release includes `cv-linter.mcpb`, a Claude Desktop extension for
+Apple Silicon and Intel macOS and x64 Windows. Download it from the release,
+then open Claude Desktop and choose **Settings → Extensions → Advanced
+settings → Install Extension…**. The bundle contains all supported binaries and
+does not require Rust, an API key, or a background service. Claude Desktop
+provides the Node.js launcher runtime. Give Claude the absolute path to the
+local PDF, DOCX, or Markdown CV you want reviewed.
+
+The repository is also a Claude plugin for Claude Code and Cowork. Its plugin
+combines the [`cv-linter` skill](skills/cv-linter/SKILL.md) with the local MCP
+server configuration. Install the `cv-linter` executable first, then test a
+checkout with:
+
+```sh
+claude --plugin-dir /absolute/path/to/cv-linter
+```
+
+The Desktop extension and Claude plugin serve different host surfaces but call
+the same two stdio MCP tools. Neither changes the local-processing boundary
+described above.
+
 ## Scope
 
 The MVP is an evidence-oriented parser and deterministic linter. It is not an ATS simulator, hiring predictor, ranking system, automatic rewriter, or compatibility guarantee for a particular ATS. Semantic job matching and rewriting remain responsibilities of the configured host after an explicit extraction handoff.
 
-The plugin-layout [`skills/cv-linter/SKILL.md`](skills/cv-linter/SKILL.md) is present and validator-clean as host instructions. It routes report generation through a [consistent report template](skills/cv-linter/references/report-template.md), qualitative advice through [bounded CV-writing guidance](skills/cv-linter/references/cv-writing-guidance.md), and configuration questions through the [current and planned rule-configuration boundary](skills/cv-linter/references/rule-configuration.md). A plugin manifest and platform-specific packaged release remain future work; the current testable product is the local executable and its stdio MCP entry point.
+The plugin-layout [`skills/cv-linter/SKILL.md`](skills/cv-linter/SKILL.md) is present and validator-clean as host instructions. It routes report generation through a [consistent report template](skills/cv-linter/references/report-template.md), qualitative advice through [bounded CV-writing guidance](skills/cv-linter/references/cv-writing-guidance.md), and configuration questions through the [current and planned rule-configuration boundary](skills/cv-linter/references/rule-configuration.md). The repository includes a Claude plugin manifest, a Claude Desktop MCPB manifest, and tag-driven GitHub release configuration. See the [release guide](docs/releasing.md) for versioning, validation, and the remaining signing limitations.

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV Linter third-party licenses</title>
+  <style>
+    body { font-family: sans-serif; line-height: 1.4; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; }
+    pre { overflow-x: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>CV Linter third-party licenses</h1>
+    <p>This file lists licenses detected for the Rust packages used to build CV Linter. Separately licensed spelling dictionaries and their original notices are included alongside it under <code>dictionaries</code>.</p>
+    <h2>License overview</h2>
+    <ul>
+    {{#each overview}}
+      <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
+    {{/each}}
+    </ul>
+    <h2>License texts and packages</h2>
+    {{#each licenses}}
+      {{#if first_of_kind}}<h3 id="{{id}}">{{name}}</h3>{{/if}}
+      <h4 id="{{id}}-{{@index}}">{{name}}</h4>
+      <p>Used by:</p>
+      <ul>
+      {{#each used_by}}
+        <li><a href="{{#if crate.repository}}{{crate.repository}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}}">{{crate.name}} {{crate.version}}</a></li>
+      {{/each}}
+      </ul>
+      <pre>{{text}}</pre>
+    {{/each}}
+  </main>
+</body>
+</html>

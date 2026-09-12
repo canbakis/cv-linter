@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "cv-linter",
+  "displayName": "CV Linter",
+  "version": "0.1.0",
+  "description": "Review PDF, DOCX, and Markdown CVs with local deterministic linting and evidence-grounded guidance.",
+  "author": {
+    "name": "Can Bakis",
+    "url": "https://github.com/canbakis"
+  },
+  "homepage": "https://github.com/canbakis/cv-linter",
+  "repository": "https://github.com/canbakis/cv-linter",
+  "license": "MIT",
+  "keywords": ["cv", "resume", "linting", "mcp"]
+}

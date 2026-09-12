@@ -1,0 +1,56 @@
+{
+  "manifest_version": "0.3",
+  "name": "cv-linter",
+  "display_name": "CV Linter",
+  "version": "0.1.0",
+  "description": "Extract and deterministically lint PDF, DOCX, and Markdown CVs locally.",
+  "long_description": "CV Linter reads one explicitly selected local CV at a time and exposes deterministic linting and source-located text extraction to Claude. Parsing and linting run in the bundled executable; text given to Claude follows the host and model data policies.",
+  "author": {
+    "name": "Can Bakis",
+    "url": "https://github.com/canbakis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/canbakis/cv-linter.git"
+  },
+  "homepage": "https://github.com/canbakis/cv-linter",
+  "documentation": "https://github.com/canbakis/cv-linter#readme",
+  "support": "https://github.com/canbakis/cv-linter/issues",
+  "license": "MIT",
+  "keywords": ["cv", "resume", "linting", "mcp"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.js"],
+      "env": {}
+    }
+  },
+  "tools": [
+    {
+      "name": "lint_cv",
+      "description": "Deterministically lint one explicitly selected local PDF, DOCX, or Markdown CV."
+    },
+    {
+      "name": "extract_cv_text",
+      "description": "Extract ordered, source-located text blocks from one explicitly selected local CV."
+    }
+  ],
+  "tools_generated": false,
+  "prompts": [
+    {
+      "name": "review_cv",
+      "description": "Run a deterministic lint and evidence-grounded review of a selected CV.",
+      "arguments": ["path"],
+      "text": "Review the CV at ${arguments.path}. Call lint_cv and then extract_cv_text for that exact file. Keep deterministic findings separate from your ATS-oriented risk and writing assessment, cite human-readable source locations, report unresolved spelling separately, and never invent facts or claim an ATS score, pass guarantee, hiring prediction, or vendor compatibility. Explain that extracted text given to Claude follows the host and model data policies."
+    }
+  ],
+  "prompts_generated": false,
+  "compatibility": {
+    "platforms": ["darwin", "win32"],
+    "runtimes": {
+      "node": ">=18"
+    }
+  }
+}

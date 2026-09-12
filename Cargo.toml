@@ -2,8 +2,27 @@
 name = "cv-linter"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.94"
 license = "MIT"
-description = "Local, evidence-oriented CV linting"
+description = "Local, evidence-oriented CV extraction and deterministic linting"
+authors = ["Can Bakis"]
+repository = "https://github.com/canbakis/cv-linter"
+homepage = "https://github.com/canbakis/cv-linter"
+readme = "README.md"
+keywords = ["cv", "resume", "linter", "mcp"]
+categories = ["command-line-utilities", "text-processing"]
+include = [
+    "/src/**",
+    "/dictionaries/**",
+    "/tests/**",
+    "/Cargo.toml",
+    "/Cargo.lock",
+    "/rust-toolchain.toml",
+    "/README.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/THIRD-PARTY-LICENSES.html",
+]
 
 [dependencies]
 clap = { version = "4.6.6", features = ["derive"] }
@@ -23,3 +42,8 @@ zip = { version = "=8.6.0", default-features = false, features = ["deflate-flate
 
 [profile.release]
 strip = "symbols"
+
+# Release artifacts are built by dist with thin LTO for smaller binaries.
+[profile.dist]
+inherits = "release"
+lto = "thin"

@@ -1,0 +1,53 @@
+name: Claude Desktop bundles
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+jobs:
+  package:
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Check release metadata
+        run: scripts/check-release-version.sh "$GITHUB_REF_NAME"
+
+      - name: Download native release archives
+        run: |
+          mkdir -p release-archives
+          gh release download "$GITHUB_REF_NAME" --dir release-archives \
+            --pattern 'cv-linter-aarch64-apple-darwin.tar.xz' \
+            --pattern 'cv-linter-x86_64-apple-darwin.tar.xz' \
+            --pattern 'cv-linter-x86_64-pc-windows-msvc.zip'
+
+      - name: Build MCP Bundles
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          scripts/package-mcpb.sh "$version" \
+            release-archives/cv-linter-aarch64-apple-darwin.tar.xz \
+            release-archives/cv-linter-x86_64-apple-darwin.tar.xz \
+            release-archives/cv-linter-x86_64-pc-windows-msvc.zip \
+            dist/cv-linter.mcpb
+          cd dist
+          sha256sum *.mcpb > mcpb-sha256.sum
+
+      - name: Attest MCP Bundles
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: dist/*.mcpb
+
+      - name: Upload MCP Bundles
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --clobber

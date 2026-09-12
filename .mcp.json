@@ -1,0 +1,6 @@
+{
+  "cv-linter": {
+    "command": "cv-linter",
+    "args": ["mcp", "--stdio"]
+  }
+}

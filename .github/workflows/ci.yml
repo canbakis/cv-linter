@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Validate release metadata
+        run: scripts/check-release-version.sh
+
+      - name: Validate JSON
+        run: jq empty docs/research/*.json .claude-plugin/plugin.json .mcp.json packaging/mcpb/manifest.json
+
+      - name: Validate MCPB manifest
+        run: npx --yes @anthropic-ai/mcpb@2.1.2 validate packaging/mcpb/manifest.json
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Lint
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Check crate package
+        run: cargo package --locked
+
+      - name: Check generated release workflow
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/axodotdev/cargo-dist/releases/download/v0.32.0/cargo-dist-installer.sh | sh
+          dist generate --check
+
+  licenses:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Install cargo-about
+        run: cargo install cargo-about --version 0.9.2 --locked --features cli
+
+      - name: Check third-party license inventory
+        run: |
+          cargo about generate about.hbs --locked --fail \
+            --output-file "$RUNNER_TEMP/THIRD-PARTY-LICENSES.html"
+          cmp THIRD-PARTY-LICENSES.html "$RUNNER_TEMP/THIRD-PARTY-LICENSES.html"
+
+  security-audit:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Audit Rust dependencies
+        run: cargo audit
